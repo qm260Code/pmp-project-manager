@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Bosch Color Palette (Light corporate brand identity) */
+  --bg-primary: #eff1f4; /* Light gray page background */
+  --bg-secondary: #ffffff; /* White panel/sidebar background */
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-opaque: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  
+  --border-color: #e5e7eb; /* Soft gray dividers and borders */
+  --border-color-active: #ED0007; /* Bosch Red active borders */
+  
+  --text-primary: #111827; /* Dark slate gray primary text */
+  --text-secondary: #4b5563; /* Charcoal gray secondary text */
+  --text-muted: #888d90; /* Medium gray muted text (Matches Shimmer Silver) */
+  --text-brand: #000000; /* Black brand title wordmark */
+  
+  /* Primary Accent & Brand colors */
+  --accent-primary: #ED0007; /* Official Bosch Red */
+  --accent-primary-glow: rgba(237, 0, 7, 0.12);
+  --accent-secondary: #005691; /* Official Bosch Blue */
+  --accent-secondary-glow: rgba(0, 86, 145, 0.1);
+  
+  /* PMP Process Group Colors (Soft pastel background with high contrast text) */
+  --pmp-initiating: #005691;
+  --pmp-initiating-bg: rgba(0, 86, 145, 0.08);
+  
+  --pmp-planning: #7c3aed;
+  --pmp-planning-bg: rgba(124, 58, 237, 0.08);
+  
+  --pmp-executing: #16a34a;
+  --pmp-executing-bg: rgba(22, 163, 74, 0.08);
+  
+  --pmp-monitoring: #d97706;
+  --pmp-monitoring-bg: rgba(217, 119, 6, 0.08);
+  
+  --pmp-closing: #dc2626;
+  --pmp-closing-bg: rgba(220, 38, 38, 0.08);
+  
+  /* Status Colors */
+  --status-success: #16a34a;
+  --status-warning: #ea580c;
+  --status-danger: #dc2626;
+  --status-info: #2563eb;
+  
+  /* Risk Heatmap Colors (Vibrant colors matching reference style) */
+  --risk-low: #49de80;
+  --risk-med: #facc14;
+  --risk-high: #fb933c;
+  --risk-veryhigh: #f35957;
+  --risk-critical: #ef4444;
+  
+  /* Layout sizes */
+  --sidebar-width: 260px;
+  --header-height: 70px;
+  
+  /* Shadows & Glass overrides */
+  --shadow-lg: 0 4px 18px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-neon: 0 0 10px rgba(237, 0, 7, 0.04);
+  --glass-blur: none;
+}
+
+/* Base resets & styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* Utility styles */
+.text-gradient {
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--border-color-active);
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.6), var(--shadow-neon);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(237, 0, 7, 0.2);
+}
+.btn-primary:hover {
+  background: #ff1e25;
+  box-shadow: 0 4px 15px rgba(237, 0, 7, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-surface-opaque);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-secondary);
+}
+
+.btn-danger {
+  background: var(--status-danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #ef4444;
+  transform: translateY(-1px);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-initiating { color: var(--pmp-initiating); background: var(--pmp-initiating-bg); border: 1px solid rgba(0, 86, 145, 0.15); }
+.badge-planning { color: var(--pmp-planning); background: var(--pmp-planning-bg); border: 1px solid rgba(124, 58, 237, 0.15); }
+.badge-executing { color: var(--pmp-executing); background: var(--pmp-executing-bg); border: 1px solid rgba(22, 163, 74, 0.15); }
+.badge-monitoring { color: var(--pmp-monitoring); background: var(--pmp-monitoring-bg); border: 1px solid rgba(217, 119, 6, 0.15); }
+.badge-closing { color: var(--pmp-closing); background: var(--pmp-closing-bg); border: 1px solid rgba(220, 38, 38, 0.15); }
