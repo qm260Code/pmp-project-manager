@@ -11,6 +11,8 @@ import { CostComponent } from './components/cost.js';
 import { RaciComponent } from './components/raci.js';
 import { TeamComponent } from './components/team.js';
 import { ActionItemsComponent } from './components/actionItems.js';
+import { ChangeRequestsComponent } from './components/changeRequests.js';
+import { RequirementsComponent } from './components/requirements.js';
 import { ExportComponent } from './components/export.js';
 
 class PmpApp {
@@ -35,7 +37,7 @@ class PmpApp {
   }
 
   initElements() {
-    this.projectNameDisplay = document.getElementById('header-project-name');
+    this.projectSelector = document.getElementById('project-selector');
     this.projectStatusDisplay = document.getElementById('header-project-status');
     this.evmLight = document.getElementById('header-evm-light');
     this.evmText = document.getElementById('header-evm-text');
@@ -44,7 +46,9 @@ class PmpApp {
     this.toastText = document.getElementById('toast-text');
     this.btnRollback = document.getElementById('btn-quick-rollback');
     this.btnReset = document.getElementById('btn-quick-reset');
-    this.headerProjectTrigger = document.getElementById('header-project-info-trigger');
+    this.btnEditProjectInfo = document.getElementById('btn-edit-project-info');
+    this.btnAddProject = document.getElementById('btn-add-new-project');
+    this.btnDeleteProject = document.getElementById('btn-delete-current-project');
   }
 
   initRouter() {
@@ -67,6 +71,8 @@ class PmpApp {
       { view: 'raci', emoji: '🔗' },
       { view: 'team', emoji: '👔' },
       { view: 'actionItems', emoji: '📋' },
+      { view: 'changeRequests', emoji: '🔄' },
+      { view: 'requirements', emoji: '🎯' },
       { view: 'export', emoji: '📥' }
     ];
 
@@ -155,8 +161,14 @@ class PmpApp {
   }
 
   initGlobalActions() {
-    // Click header project info to edit project details
-    this.headerProjectTrigger.addEventListener('click', () => {
+    // Project switching dropdown
+    this.projectSelector.addEventListener('change', (e) => {
+      const newId = e.target.value;
+      store.switchProject(newId);
+    });
+
+    // Click to edit active project details
+    this.btnEditProjectInfo.addEventListener('click', () => {
       const projectInfo = store.state.projectInfo;
       const bodyHtml = `
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -230,6 +242,37 @@ class PmpApp {
       );
     });
 
+    // Create new blank project
+    this.btnAddProject.addEventListener('click', () => {
+      const bodyHtml = `
+        <div class="form-group">
+          <label for="new-project-name">新项目名称:</label>
+          <input type="text" id="new-project-name" name="name" class="form-control" placeholder="如：CNHTC 第二代系统标定项目" required>
+        </div>
+      `;
+      ModalHelper.open(
+        '创建全新项目',
+        bodyHtml,
+        (data) => {
+          const name = data.name ? data.name.trim() : '';
+          if (!name) {
+            this.notify({ type: 'error', message: '项目名称不能为空！' });
+            return false;
+          }
+          store.createNewProject(name);
+          return true;
+        }
+      );
+    });
+
+    // Delete current active project
+    this.btnDeleteProject.addEventListener('click', () => {
+      const activeProjectName = store.state.projectInfo.name;
+      if (confirm(`⚠️ 警告：您确定要彻底删除当前项目【${activeProjectName}】吗？\n此操作将清空该项目的所有 WBS、费用、风险、相关方、变更及需求数据，且无法恢复！`)) {
+        store.deleteProject(store.state.currentProjectId);
+      }
+    });
+
     // Reset back to template
     this.btnReset.addEventListener('click', () => {
       if (confirm('确定要清除所有修改，重置为系统默认项目模板数据吗？此操作无法撤销。')) {
@@ -269,15 +312,27 @@ class PmpApp {
     this.components.raci = new RaciComponent(document.getElementById('view-raci'));
     this.components.team = new TeamComponent(document.getElementById('view-team'));
     this.components.actionItems = new ActionItemsComponent(document.getElementById('view-actionItems'));
+    this.components.changeRequests = new ChangeRequestsComponent(document.getElementById('view-changeRequests'));
+    this.components.requirements = new RequirementsComponent(document.getElementById('view-requirements'));
     this.components.export = new ExportComponent(document.getElementById('view-export'));
   }
 
   updateHeaderUI(state) {
     if (!state) return;
-    const { name, status } = state.projectInfo;
+    const { status } = state.projectInfo;
     
-    // Update Title & Badge
-    this.projectNameDisplay.textContent = name || '未命名项目';
+    // Update project selector option items
+    if (this.projectSelector && state.projectsList) {
+      let optionsHtml = '';
+      state.projectsList.forEach(proj => {
+        const isSelected = proj.id === state.currentProjectId ? 'selected' : '';
+        const name = proj.projectInfo ? proj.projectInfo.name : '未命名项目';
+        optionsHtml += `<option value="${proj.id}" ${isSelected}>${name}</option>`;
+      });
+      this.projectSelector.innerHTML = optionsHtml;
+    }
+    
+    // Update Status Badge
     this.projectStatusDisplay.textContent = (status || 'PLANNING').toUpperCase();
     
     // Status color mapping

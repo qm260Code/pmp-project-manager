@@ -39,10 +39,13 @@
 
     <!-- Top Status Header -->
     <header class="app-header">
-      <div class="header-project-info" id="header-project-info-trigger" title="点击编辑项目基本信息">
-        <span class="project-title-display text-gradient" id="header-project-name">加载中...</span>
+      <div class="header-project-info" style="display: flex; align-items: center; gap: 12px; cursor: default;">
+        <span style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-secondary);">项目:</span>
+        <select id="project-selector" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; max-width: 280px; text-overflow: ellipsis; padding: 4px 12px; border-radius: 6px;" title="选择切换当前项目"></select>
         <span class="badge badge-planning" id="header-project-status">PLANNING</span>
-        <span style="font-size: 11px; opacity: 0; transition: opacity 0.2s;" class="edit-hint">✏️ 编辑</span>
+        <button class="btn btn-secondary" id="btn-edit-project-info" style="padding: 4px 8px; font-size: 12px;" title="编辑当前项目详情与总预算">✏️ 属性</button>
+        <button class="btn btn-secondary" id="btn-add-new-project" style="padding: 4px 8px; font-size: 12px;" title="新建空白项目模板">+ 新项目</button>
+        <button class="btn btn-danger" id="btn-delete-current-project" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: none; border-radius: 6px;" title="从系统中彻底删除当前项目">🗑️ 删除</button>
       </div>
       
       <!-- Live Indicators -->
@@ -330,7 +333,71 @@
         </div>
       </section>
 
-      <!-- 10. Export & Report View -->
+      <!-- 10. Change Requests View -->
+      <section id="view-changeRequests" class="page-view">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>项目变更登记册 (Change Request Register)</h1>
+            <p>评估、跟踪和归档项目中的变更请求（CR），防范未经审批的范围蔓延与进度失控</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-change-request">+ 新建变更申请</button>
+        </div>
+        <div class="dashboard-grid" id="change-requests-kpi-container" style="margin-bottom: 20px;"></div>
+        <div class="glass-panel" style="padding: 20px;">
+          <h3>📋 项目变更申请明细表</h3>
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>变更编号/描述</th>
+                  <th>类型</th>
+                  <th>影响/可行性分析</th>
+                  <th>申请人 / 日期</th>
+                  <th>CCB审批决策 / 执行人</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="change-requests-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. Customer Requirements View -->
+      <section id="view-requirements" class="page-view">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>客户需求跟踪矩阵 (Requirement Traceability Matrix)</h1>
+            <p>整理并跟踪客户的业务与功能需求，关联设计、开发及测试验收全生命周期状态</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-requirement">+ 新增客户需求</button>
+        </div>
+        <div class="dashboard-grid" id="requirements-kpi-container" style="margin-bottom: 20px;"></div>
+        <div class="glass-panel" style="padding: 20px;">
+          <h3>📋 客户需求明细表 (RTM)</h3>
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>需求编号/名称</th>
+                  <th>需求说明描述</th>
+                  <th>分类</th>
+                  <th>优先级</th>
+                  <th>责任接口人</th>
+                  <th>目标版本/里程碑</th>
+                  <th>验证方法</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="requirements-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. Export & Report View -->
       <section id="view-export" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
