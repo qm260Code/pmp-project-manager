@@ -1,9 +1,0 @@
-{
-  "name": "pmp-project-manager",
-  "version": "1.0.0",
-  "description": "PMP 5大过程组 10大知识领域项目管理控制中心",
-  "scripts": {
-    "dev": "npx serve -l 3000"
-  },
-  "dependencies": {}
-}
