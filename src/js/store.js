@@ -26,18 +26,18 @@ class PmpStore {
             parsed.sidebarTitles = {};
           }
           const defaultTitles = {
-            dashboard: "项目基本情况总览",
-            matrix: "PMP 5x10 过程矩阵",
-            stakeholders: "相关方登记册 (10.1)",
-            risks: "风险登记册 (11.2)",
-            schedule: "进度里程碑与甘特图",
-            cost: "成本挣值分析 (EVM)",
-            raci: "责任分配矩阵 (RACI)",
-            team: "团队组织架构",
-            actionItems: "项目待完成事项",
-            changeRequests: "项目变更管理",
-            requirements: "客户需求管理",
-            export: "数据导出与分析报告"
+            dashboard: "Dashboard",
+            matrix: "Process Area Matrix",
+            stakeholders: "Stakeholder Register",
+            risks: "Risk Register",
+            schedule: "Schedule & Gantt",
+            cost: "Cost & EVM",
+            raci: "RACI Matrix",
+            team: "Team Structure",
+            actionItems: "Action Items Tracker",
+            changeRequests: "Change Requests Log",
+            requirements: "Requirements Matrix (RTM)",
+            export: "Export & Report"
           };
           Object.keys(defaultTitles).forEach(k => {
             if (!parsed.sidebarTitles[k]) {
@@ -45,6 +45,12 @@ class PmpStore {
               updated = true;
             }
           });
+
+          // i18n Language patch
+          if (!parsed.language) {
+            parsed.language = 'en';
+            updated = true;
+          }
 
           // Dynamic patch for team, actionItems, changeRequests, and requirements
           if (!parsed.team) {
@@ -104,6 +110,7 @@ class PmpStore {
     const defaultData = JSON.parse(JSON.stringify(InitialData));
     defaultData.projectsList = [];
     defaultData.currentProjectId = 'p-1';
+    defaultData.language = 'en';
     
     const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements'];
     const firstProject = { id: 'p-1' };
@@ -111,8 +118,8 @@ class PmpStore {
       firstProject[key] = JSON.parse(JSON.stringify(defaultData[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
     });
     // Add custom modules default titles if missing
-    firstProject.sidebarTitles.changeRequests = "项目变更管理";
-    firstProject.sidebarTitles.requirements = "客户需求管理";
+    firstProject.sidebarTitles.changeRequests = "Change Requests Log";
+    firstProject.sidebarTitles.requirements = "Requirements Matrix (RTM)";
     
     defaultData.projectsList.push(firstProject);
     
@@ -484,42 +491,42 @@ class PmpStore {
       id: newId,
       projectInfo: {
         name: name,
-        manager: '未指定',
-        sponsor: '未指定',
+        manager: 'Unassigned',
+        sponsor: 'Unassigned',
         status: 'Planning',
         budget: 100000,
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
-        description: '暂无项目商业论证与背景描述。'
+        description: 'No business case description yet.'
       },
       documents: {
-        developProjectCharter: `# 1. 项目章程 (Project Charter)\n\n## 1.1 项目背景与目的\n（在此录入新建项目的背景和商业目的）\n\n## 1.2 项目目标\n（如时间、预算、交付标准）`,
-        developProjectManagementPlan: `# 2. 项目管理计划\n\n（在此规划项目各个知识领域的管理基准）`,
-        defineScope: `# 3. 项目范围说明书\n\n## 3.1 范围描述\n\n## 3.2 验收标准`
+        developProjectCharter: `# 1. Project Charter\n\n## 1.1 Project Background & Purpose\n(Enter background and business purpose here)\n\n## 1.2 Objectives\n(e.g., timeline, budget, delivery standard)`,
+        developProjectManagementPlan: `# 2. Project Management Plan\n\n(Enter planning for each knowledge area here)`,
+        defineScope: `# 3. Project Scope Statement\n\n## 3.1 Scope Description\n\n## 3.2 Acceptance Criteria`
       },
       stakeholders: [],
       risks: [],
       schedule: [],
       costs: [],
       raci: {
-        roles: ['项目经理', '技术负责人', '客户代表', '测试经理'],
+        roles: ['Project Manager', 'Technical Lead', 'Customer Rep', 'Test Lead'],
         matrix: []
       },
       team: [],
       actionItems: [],
       sidebarTitles: {
-        dashboard: "项目基本情况总览",
-        matrix: "PMP 5x10 过程矩阵",
-        stakeholders: "相关方登记册 (10.1)",
-        risks: "风险登记册 (11.2)",
-        schedule: "进度里程碑与甘特图",
-        cost: "成本挣值分析 (EVM)",
-        raci: "责任分配矩阵 (RACI)",
-        team: "团队组织架构",
-        actionItems: "项目待完成事项",
-        changeRequests: "项目变更管理",
-        requirements: "客户需求管理",
-        export: "数据导出与分析报告"
+        dashboard: "Dashboard",
+        matrix: "Process Area Matrix",
+        stakeholders: "Stakeholder Register",
+        risks: "Risk Register",
+        schedule: "Schedule & Gantt",
+        cost: "Cost & EVM",
+        raci: "RACI Matrix",
+        team: "Team Structure",
+        actionItems: "Action Items Tracker",
+        changeRequests: "Change Requests Log",
+        requirements: "Requirements Matrix (RTM)",
+        export: "Export & Report"
       },
       changeRequests: [],
       requirements: []
@@ -608,6 +615,11 @@ class PmpStore {
   deleteRequirement(id) {
     if (!this.state.requirements) this.state.requirements = [];
     this.state.requirements = this.state.requirements.filter(item => item.id !== id);
+    this.commit();
+  }
+
+  changeLanguage(lang) {
+    this.state.language = lang;
     this.commit();
   }
 }

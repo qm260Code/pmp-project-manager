@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PMP 项目管理与过程领域控制中心</title>
+  <title>PMP Project Management & Process Control Center</title>
   <link rel="stylesheet" href="src/css/theme.css">
   <link rel="stylesheet" href="src/css/layout.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -16,16 +16,13 @@
     <aside class="app-sidebar">
       <div class="sidebar-brand">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <!-- Bosch Armature Magneto Logo SVG -->
-          <svg width="24" height="24" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
-            <circle cx="13" cy="13" r="11" stroke="#111" stroke-width="2.2" />
-            <line x1="2" y1="13" x2="24" y2="13" stroke="#111" stroke-width="2.2" />
-            <path d="M 8 5 A 9 9 0 0 0 8 21" stroke="#111" stroke-width="2.2" stroke-linecap="round" />
-            <path d="M 18 5 A 9 9 0 0 1 18 21" stroke="#111" stroke-width="2.2" stroke-linecap="round" />
+          <!-- Official Bosch Flat Armature Logo SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; fill: #111827;">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12C23.996 5.374 18.626.004 12 0zm0 22.88C5.991 22.88 1.12 18.009 1.12 12S5.991 1.12 12 1.12 22.88 5.991 22.88 12c-.006 6.006-4.874 10.874-10.88 10.88zm4.954-18.374h-.821v4.108h-8.24V4.506h-.847a8.978 8.978 0 0 0 0 14.988h.846v-4.108h8.24v4.108h.822a8.978 8.978 0 0 0 0-14.988zM6.747 17.876a7.86 7.86 0 0 1 0-11.752v11.752zm9.386-3.635h-8.24V9.734h8.24v4.507zm1.12 3.61V6.124a7.882 7.882 0 0 1 0 11.727z"/>
           </svg>
           <span style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 900; color: #ED0007; letter-spacing: 0.04em; line-height: 1;">BOSCH</span>
         </div>
-        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px;">项目管理软件</h2>
+        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px;" data-i18n="sidebar_title_sub">Project Management</h2>
       </div>
       
       <!-- Dynamic Sidebar Menu List -->
@@ -40,18 +37,18 @@
     <!-- Top Status Header -->
     <header class="app-header">
       <div class="header-project-info" style="display: flex; align-items: center; gap: 12px; cursor: default;">
-        <span style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-secondary);">项目:</span>
-        <select id="project-selector" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; max-width: 280px; text-overflow: ellipsis; padding: 4px 12px; border-radius: 6px;" title="选择切换当前项目"></select>
+        <span style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-secondary);" data-i18n="header_project">Project:</span>
+        <select id="project-selector" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; max-width: 280px; text-overflow: ellipsis; padding: 4px 12px; border-radius: 6px;" title="Switch current project"></select>
         <span class="badge badge-planning" id="header-project-status">PLANNING</span>
-        <button class="btn btn-secondary" id="btn-edit-project-info" style="padding: 4px 8px; font-size: 12px;" title="编辑当前项目详情与总预算">✏️ 属性</button>
-        <button class="btn btn-secondary" id="btn-add-new-project" style="padding: 4px 8px; font-size: 12px;" title="新建空白项目模板">+ 新项目</button>
-        <button class="btn btn-danger" id="btn-delete-current-project" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: none; border-radius: 6px;" title="从系统中彻底删除当前项目">🗑️ 删除</button>
+        <button class="btn btn-secondary" id="btn-edit-project-info" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_properties" title="Edit project details and budget">✏️ Properties</button>
+        <button class="btn btn-secondary" id="btn-add-new-project" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_new_project" title="Create new project template">+ New Project</button>
+        <button class="btn btn-danger" id="btn-delete-current-project" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: none; border-radius: 6px;" data-i18n="header_btn_delete_project" title="Delete current project from system">🗑️ Delete</button>
       </div>
       
       <!-- Live Indicators -->
       <div class="header-status-pills">
         <div class="status-indicator">
-          <span>挣值状态:</span>
+          <span data-i18n="header_cpi_spi">EVM Status:</span>
           <div class="evm-indicator-glow" id="header-evm-indicator">
             <span class="evm-indicator-light" id="header-evm-light"></span>
             <span id="header-evm-text">CPI/SPI</span>
@@ -59,17 +56,22 @@
         </div>
         <div class="status-indicator">
           <span class="status-dot active"></span>
-          <span id="header-save-status">云本地自动保存</span>
+          <span id="header-save-status" data-i18n="header_auto_save">Cloud Local Auto-saved</span>
         </div>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions & Language Selector -->
       <div class="header-actions">
-        <button class="btn btn-secondary" id="btn-quick-rollback" title="回滚到上一次修改">
-          ↩️ 撤销
+        <!-- Language Switching Control -->
+        <select id="language-selector" style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; padding: 4px 8px; border-radius: 6px;" title="Switch Language / 切换语言">
+          <option value="en">EN</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="btn btn-secondary" id="btn-quick-rollback" data-i18n="header_rollback" title="Rollback last change">
+          ↩️ Undo
         </button>
-        <button class="btn btn-secondary" id="btn-quick-reset" title="重置回默认的冷链项目模板">
-          🔄 模版
+        <button class="btn btn-secondary" id="btn-quick-reset" data-i18n="header_template" title="Reset to baseline template">
+          🔄 Template
         </button>
       </div>
     </header>
@@ -81,21 +83,25 @@
       <section id="view-dashboard" class="page-view active">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>项目情况总览 (Dashboard)</h1>
-            <p>快速洞察项目进展、绩效指标及核心高风险要素</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_dashboard_title">Project Dashboard</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_dashboard">Quick insights into project progress, performance indicators, and core risks.</span>
+              </span>
+            </h1>
           </div>
         </div>
         <div class="dashboard-grid" id="dashboard-kpi-container"></div>
         <div class="dashboard-sections">
           <div class="glass-panel" style="padding: 20px;" id="dashboard-timeline-panel">
             <h3 style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-              <span>📅 里程碑进度条</span>
-              <span style="font-size:12px; color:var(--text-muted);">最近更新</span>
+              <span data-i18n="dashboard_milestones_title">📅 Milestones Timeline</span>
             </h3>
             <div id="dashboard-timeline-content"></div>
           </div>
           <div class="glass-panel" style="padding: 20px;" id="dashboard-risk-panel">
-            <h3 style="margin-bottom:15px; color:var(--status-danger);">⚠️ 核心风险警示</h3>
+            <h3 style="margin-bottom:15px; color:var(--status-danger);" data-i18n="dashboard_risks_title">⚠️ Core Risks Alert</h3>
             <div id="dashboard-risks-content"></div>
           </div>
         </div>
@@ -105,8 +111,13 @@
       <section id="view-matrix" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>PMP 5大过程组 10大知识领域矩阵</h1>
-            <p>点击过程领域模块，录入与更新对应的项目文档交付物</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_matrix_title">PMP Process Matrix</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_matrix">Click on a process area to enter and update the corresponding PMP deliverables.</span>
+              </span>
+            </h1>
           </div>
         </div>
         <div class="glass-panel" style="padding: 20px;">
@@ -118,28 +129,33 @@
       <section id="view-stakeholders" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>相关方登记册 (Stakeholder Register)</h1>
-            <p>规划并更新利益相关方的权力与利益，实施针对性参与策略</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_stakeholders_title">Stakeholder Register</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_stakeholders">Identify, analyze, and manage stakeholder power, interest, and engagement strategies.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-stakeholder">+ 新增相关方</button>
+          <button class="btn btn-primary" id="btn-add-stakeholder" data-i18n="btn_add_stakeholder">+ Add Stakeholder</button>
         </div>
         <div class="stakeholder-layout">
           <div class="glass-panel" style="padding: 20px;">
-            <h3>📊 权力/利益矩阵 (Power/Interest Grid)</h3>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">自动归类相关方，指导沟通干预策略</p>
+            <h3 data-i18n="sh_grid_title">📊 Power / Interest Grid</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;" data-i18n="sh_grid_desc">Auto-classified. Guarantees communication strategy.</p>
             <div class="power-interest-quadrant" id="stakeholder-quadrant-container"></div>
           </div>
           <div class="glass-panel" style="padding: 20px;">
-            <h3>📋 登记明细表</h3>
+            <h3 data-i18n="sh_details_title">📋 Stakeholder Register details</h3>
             <div class="custom-table-container">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>姓名</th>
-                    <th>角色/职责</th>
-                    <th>权力/利益</th>
-                    <th>参与状态</th>
-                    <th>操作</th>
+                    <th data-i18n="sh_col_name">Name</th>
+                    <th data-i18n="sh_col_role">Role / Responsibility</th>
+                    <th data-i18n="sh_col_power_interest">Power / Interest</th>
+                    <th data-i18n="sh_col_engagement">Engagement Status</th>
+                    <th data-i18n="sh_col_action">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="stakeholder-table-body"></tbody>
@@ -153,29 +169,34 @@
       <section id="view-risks" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>风险登记册 (Risk Register)</h1>
-            <p>识别并跟踪项目潜在威胁，配置应对措施与责任人</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_risks_title">Risk Register</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_risks">Identify and track project risks, rating scores, mitigation strategies, and owners.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-risk">+ 新增风险</button>
+          <button class="btn btn-primary" id="btn-add-risk" data-i18n="btn_add_risk">+ Add Risk</button>
         </div>
         <div class="risk-layout">
           <div class="glass-panel" style="padding: 20px;">
-            <h3>🔥 5x5 风险热力图 (Probability/Impact Matrix)</h3>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">点击网格可筛选出对应的风险条目</p>
+            <h3 data-i18n="risk_grid_title">🔥 5x5 Risk Heatmap (P x I)</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;" data-i18n="risk_grid_desc">Click cells to filter list.</p>
             <div class="heatmap-grid" id="risk-heatmap-container"></div>
           </div>
           <div class="glass-panel" style="padding: 20px;">
-            <h3>📋 风险评估明细表 <span id="risk-filter-tag" class="badge badge-planning" style="display:none;"></span></h3>
+            <h3 data-i18n="risk_details_title">📋 Risk Log details</h3>
             <div class="custom-table-container">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>风险描述</th>
-                    <th>类型</th>
-                    <th>P x I = 得分</th>
-                    <th>等级</th>
-                    <th>应对策略 / 责任人</th>
-                    <th>操作</th>
+                    <th data-i18n="risk_col_desc">Risk Description</th>
+                    <th data-i18n="risk_col_cat">Category</th>
+                    <th data-i18n="risk_col_score">P x I = Score</th>
+                    <th data-i18n="risk_col_level">Level</th>
+                    <th data-i18n="risk_col_strategy">Strategy / Owner</th>
+                    <th data-i18n="risk_col_action">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="risk-table-body"></tbody>
@@ -189,27 +210,32 @@
       <section id="view-schedule" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>进度里程碑与工作网络甘特图</h1>
-            <p>管理活动起止时间与前置依赖，图形化展示项目网络生命周期</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_schedule_title">Milestones & Gantt Chart</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_schedule">Manage WBS activities, timelines, progress, dependencies, and view Gantt chart.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-task">+ 新增里程碑/活动</button>
+          <button class="btn btn-primary" id="btn-add-task" data-i18n="btn_add_task">+ Add Activity</button>
         </div>
         <div class="glass-panel" style="padding: 20px;">
-          <h3>📈 动态 SVG 甘特图 (Gantt Chart)</h3>
+          <h3 data-i18n="sch_gantt_title">📈 WBS Gantt Chart Timeline</h3>
           <div class="gantt-container" id="gantt-chart-container"></div>
         </div>
         <div class="glass-panel" style="padding: 20px; margin-top:20px;">
-          <h3>📋 活动与任务分解表</h3>
+          <h3 data-i18n="sch_details_title">📋 Activity & Task Decomposition (WBS)</h3>
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>活动/里程碑名称</th>
-                  <th>时间跨度</th>
-                  <th>进度 (%)</th>
-                  <th>负责人</th>
-                  <th>依赖前置</th>
-                  <th>操作</th>
+                  <th data-i18n="sch_col_name">Activity/Milestone Name</th>
+                  <th data-i18n="sch_col_timeline">Timeline</th>
+                  <th data-i18n="sch_col_progress">Progress</th>
+                  <th data-i18n="sch_col_owner">Owner</th>
+                  <th data-i18n="sch_col_dep">Dependencies</th>
+                  <th data-i18n="sch_col_action">Actions</th>
                 </tr>
               </thead>
               <tbody id="schedule-table-body"></tbody>
@@ -222,23 +248,28 @@
       <section id="view-cost" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>成本估算与挣值管理系统 (EVM)</h1>
-            <p>对标计划价值(PV)、实际成本(AC)与挣值(EV)，预测项目完工情况</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_cost_title">Cost & EVM</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_cost">Track Plan Value (PV), Actual Cost (AC), and Earned Value (EV) to forecast project completion (EVM).</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-cost">+ 新增费用项</button>
+          <button class="btn btn-primary" id="btn-add-cost" data-i18n="btn_add_cost">+ Add Cost</button>
         </div>
         <div class="dashboard-grid" id="cost-evm-kpi-container" style="margin-bottom: 20px;"></div>
         <div class="glass-panel" style="padding: 20px;">
-          <h3>📋 项目成本工作包明细表</h3>
+          <h3 data-i18n="cost_details_title">📋 Project Cost Work Package Details</h3>
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>费用项/工作包描述</th>
-                  <th>计划价值 (PV)</th>
-                  <th>实际成本 (AC)</th>
-                  <th>挣值比例 (EV)</th>
-                  <th>操作</th>
+                  <th data-i18n="cost_col_desc">Cost Description / WBS Work Package</th>
+                  <th data-i18n="cost_col_pv">Planned Value (PV)</th>
+                  <th data-i18n="cost_col_ac">Actual Cost (AC)</th>
+                  <th data-i18n="cost_col_ev">Earned Value (EV)</th>
+                  <th data-i18n="cost_col_action">Actions</th>
                 </tr>
               </thead>
               <tbody id="cost-table-body"></tbody>
@@ -251,16 +282,22 @@
       <section id="view-raci" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>责任分配矩阵 (RACI Matrix)</h1>
-            <p>定义并维护项目各角色在核心活动中的职责：负责(R)、执行/批准(A)、咨询(C)、知会(I)</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_raci_title">RACI Matrix</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_raci">Define and maintain roles and responsibilities: Responsible (R), Accountable (A), Consulted (C), Informed (I).</span>
+              </span>
+            </h1>
           </div>
           <div style="display:flex; gap:10px;">
-            <button class="btn btn-secondary" id="btn-edit-raci-roles">👥 配置角色</button>
-            <button class="btn btn-primary" id="btn-add-raci-activity">+ 新增活动</button>
+            <button class="btn btn-secondary" id="btn-edit-raci-roles" data-i18n="raci_btn_roles">👥 Configure Roles</button>
+            <button class="btn btn-primary" id="btn-add-raci-activity" data-i18n="raci_btn_activity">+ Add Activity</button>
           </div>
         </div>
         <div class="glass-panel" style="padding: 20px;">
-          <div class="custom-table-container">
+          <!-- Wrap matrix in scrollable div container to prevent overflow layout breaks -->
+          <div class="custom-table-container scrollable-container" style="max-height: 500px; overflow-x: auto; overflow-y: auto;">
             <table class="custom-table" id="raci-matrix-table">
               <!-- Rendered via JS -->
             </table>
@@ -272,28 +309,33 @@
       <section id="view-team" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>团队组织架构 (Project Org Chart)</h1>
-            <p>记录项目成员汇报关系，并图形化展现树状层级拓扑图</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_team_title">Team Structure & Org Chart</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_team">Record reporting lines and display the team organizational hierarchy tree.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-team-member">+ 新增团队成员</button>
+          <button class="btn btn-primary" id="btn-add-team-member" data-i18n="btn_add_team">+ Add Member</button>
         </div>
         <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: start;">
           <div class="glass-panel" style="padding: 20px; display: flex; flex-direction: column;">
-            <h3 style="margin-bottom: 15px;">📊 组织汇报架构树 (SVG Hierarchy Tree)</h3>
-            <div id="team-org-tree-canvas" style="display: flex; justify-content: center; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); padding: 15px; overflow-x: auto; min-height: 420px; position: relative;">
+            <h3 style="margin-bottom: 15px;" data-i18n="team_grid_title">📊 SVG Hierarchy Tree</h3>
+            <div id="team-org-tree-canvas" style="display: flex; justify-content: center; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); padding: 15px; overflow-x: auto; overflow-y: auto; min-height: 420px; position: relative;">
               <!-- Drawn dynamically in JS -->
             </div>
           </div>
           <div class="glass-panel" style="padding: 20px;">
-            <h3 style="margin-bottom: 15px;">📋 项目成员登记明细</h3>
+            <h3 style="margin-bottom: 15px;" data-i18n="team_details_title">📋 Project Team Register</h3>
             <div class="custom-table-container">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>姓名</th>
-                    <th>角色与部门</th>
-                    <th>汇报给</th>
-                    <th>操作</th>
+                    <th data-i18n="team_col_name">Name</th>
+                    <th data-i18n="team_col_role">Role & Department</th>
+                    <th data-i18n="team_col_reports">Reports To</th>
+                    <th data-i18n="team_col_action">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="team-table-body"></tbody>
@@ -307,24 +349,29 @@
       <section id="view-actionItems" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>项目待完成事项 (Action Items Tracker)</h1>
-            <p>跟踪并记录待办工作包、起止日期、优先级、逾期及责任接口人</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_action_items_title">Action Items Tracker</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_actionItems">Track action items, ownership, deadlines, status, and latency.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-action-item">+ 新增待完成事项</button>
+          <button class="btn btn-primary" id="btn-add-action-item" data-i18n="btn_add_action">+ Add Action Item</button>
         </div>
         <div class="glass-panel" style="padding: 20px;">
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>待完成事项内容</th>
-                  <th>触发日期</th>
-                  <th>负责人</th>
-                  <th>期望完成日期</th>
-                  <th>延迟天数</th>
-                  <th>优先级</th>
-                  <th>当前状态</th>
-                  <th>操作</th>
+                  <th data-i18n="act_col_content">Action Item Content</th>
+                  <th data-i18n="act_col_trigger">Trigger Date</th>
+                  <th data-i18n="act_col_owner">Owner</th>
+                  <th data-i18n="act_col_target">Target Date</th>
+                  <th data-i18n="act_col_delay">Delay</th>
+                  <th data-i18n="act_col_priority">Priority</th>
+                  <th data-i18n="act_col_status">Status</th>
+                  <th data-i18n="act_col_action">Actions</th>
                 </tr>
               </thead>
               <tbody id="action-items-table-body"></tbody>
@@ -337,25 +384,30 @@
       <section id="view-changeRequests" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>项目变更登记册 (Change Request Register)</h1>
-            <p>评估、跟踪和归档项目中的变更请求（CR），防范未经审批的范围蔓延与进度失控</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_change_requests_title">Change Request Register</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_changeRequests">Evaluate, approve, and archive Change Requests (CR) to prevent scope creep.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-change-request">+ 新建变更申请</button>
+          <button class="btn btn-primary" id="btn-add-change-request" data-i18n="btn_add_cr">+ New Change Request</button>
         </div>
         <div class="dashboard-grid" id="change-requests-kpi-container" style="margin-bottom: 20px;"></div>
         <div class="glass-panel" style="padding: 20px;">
-          <h3>📋 项目变更申请明细表</h3>
+          <h3 data-i18n="cr_details_title">📋 Project Change Request Registry</h3>
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>变更编号/描述</th>
-                  <th>类型</th>
-                  <th>影响/可行性分析</th>
-                  <th>申请人 / 日期</th>
-                  <th>CCB审批决策 / 执行人</th>
-                  <th>状态</th>
-                  <th>操作</th>
+                  <th data-i18n="cr_col_desc">CR ID / Description</th>
+                  <th data-i18n="cr_col_type">Category</th>
+                  <th data-i18n="cr_col_impact">Impact Analysis</th>
+                  <th data-i18n="cr_col_requester">Requester / Date</th>
+                  <th data-i18n="cr_col_approver">CCB Decision / Owner</th>
+                  <th data-i18n="cr_col_status">Status</th>
+                  <th data-i18n="cr_col_action">Actions</th>
                 </tr>
               </thead>
               <tbody id="change-requests-table-body"></tbody>
@@ -368,27 +420,32 @@
       <section id="view-requirements" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>客户需求跟踪矩阵 (Requirement Traceability Matrix)</h1>
-            <p>整理并跟踪客户的业务与功能需求，关联设计、开发及测试验收全生命周期状态</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_requirements_title">Customer Requirements Traceability Matrix (RTM)</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_requirements">Track customer requirements across the design, development, and testing lifecycle.</span>
+              </span>
+            </h1>
           </div>
-          <button class="btn btn-primary" id="btn-add-requirement">+ 新增客户需求</button>
+          <button class="btn btn-primary" id="btn-add-requirement" data-i18n="btn_add_req">+ Add Requirement</button>
         </div>
         <div class="dashboard-grid" id="requirements-kpi-container" style="margin-bottom: 20px;"></div>
         <div class="glass-panel" style="padding: 20px;">
-          <h3>📋 客户需求明细表 (RTM)</h3>
+          <h3 data-i18n="req_details_title">📋 Customer Requirements Table (RTM)</h3>
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>需求编号/名称</th>
-                  <th>需求说明描述</th>
-                  <th>分类</th>
-                  <th>优先级</th>
-                  <th>责任接口人</th>
-                  <th>目标版本/里程碑</th>
-                  <th>验证方法</th>
-                  <th>状态</th>
-                  <th>操作</th>
+                  <th data-i18n="req_col_name">ID / Name</th>
+                  <th data-i18n="req_col_desc">Description</th>
+                  <th data-i18n="req_col_cat">Category</th>
+                  <th data-i18n="req_col_priority">Priority</th>
+                  <th data-i18n="req_col_owner">Owner</th>
+                  <th data-i18n="req_col_milestone">Target Milestone</th>
+                  <th data-i18n="req_col_verify">Verification Method</th>
+                  <th data-i18n="req_col_status">Status</th>
+                  <th data-i18n="req_col_action">Actions</th>
                 </tr>
               </thead>
               <tbody id="requirements-table-body"></tbody>
@@ -401,45 +458,50 @@
       <section id="view-export" class="page-view">
         <div class="page-header">
           <div class="page-title-group">
-            <h1>数据交互与外部分析报告</h1>
-            <p>在此将项目进度与绩效指标导出，以便交付相关方或分析决策</p>
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+              <span data-i18n="view_export_title">Data Backup & Reports</span>
+              <span class="tooltip-container">
+                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span class="tooltip-text" data-i18n="tooltip_export">Export project data backups (JSON/CSV) and generate executive PMP reports.</span>
+              </span>
+            </h1>
           </div>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
           <div class="glass-panel" style="padding: 20px;">
-            <h3>📥 数据备份与迁移</h3>
-            <p style="font-size:13px; color:var(--text-secondary); margin: 10px 0 20px 0; line-height: 1.6;">
-              推荐您定期导出项目数据 JSON 格式进行本地物理备份。本应用不包含云后台，清除浏览器缓存将导致未导出的项目数据丢失。
+            <h3 data-i18n="exp_backup_title">📥 Data Backup & Migration</h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin: 10px 0 20px 0; line-height: 1.6;" data-i18n="exp_backup_desc">
+              Export project datasets as a JSON file for physical backups. Since this application runs locally without a backend, clearing browser storage will cause data loss.
             </p>
             <div style="display:flex; gap:12px;">
-              <button class="btn btn-primary" id="btn-export-json">💾 导出备份 JSON</button>
-              <button class="btn btn-secondary" style="position:relative; overflow:hidden;">
-                📂 导入备份 JSON
+              <button class="btn btn-primary" id="btn-export-json" data-i18n="exp_btn_export_json">💾 Export Backup JSON</button>
+              <button class="btn btn-secondary" style="position:relative; overflow:hidden;" id="btn-import-wrapper">
+                <span data-i18n="exp_btn_import_json">📂 Import Backup JSON</span>
                 <input type="file" id="file-import-json" accept=".json" style="position:absolute; top:0; left:0; opacity:0; width:100%; height:100%; cursor:pointer;">
               </button>
             </div>
             <div style="margin-top: 30px; border-top:1px solid var(--border-color); padding-top:20px;">
-              <h4>📊 CSV 报表批量导出</h4>
-              <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">用于在 Excel 中做深度数据分析或制作图表</p>
+              <h4 data-i18n="exp_csv_title">📊 Batch CSV Report Export</h4>
+              <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;" data-i18n="exp_csv_desc">Export raw table registries into standard CSV files for custom graphing and analytics in Excel.</p>
               <div style="display:flex; gap:10px;">
-                <button class="btn btn-secondary" id="btn-export-sh-csv">👥 导出相关方 CSV</button>
-                <button class="btn btn-secondary" id="btn-export-risks-csv">⚠️ 导出风险登记册 CSV</button>
+                <button class="btn btn-secondary" id="btn-export-sh-csv" data-i18n="exp_btn_export_sh">👥 Export Stakeholders CSV</button>
+                <button class="btn btn-secondary" id="btn-export-risks-csv" data-i18n="exp_btn_export_risks">⚠️ Export Risks CSV</button>
               </div>
             </div>
           </div>
           
           <div class="glass-panel" style="padding: 20px; display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-              <h3>📄 汇报专用：项目状况分析大报告</h3>
-              <p style="font-size:13px; color:var(--text-secondary); margin: 10px 0 15px 0; line-height: 1.6;">
-                系统将聚合整个项目的管理计划、里程碑甘特图、EVM挣值图以及高优先级风险，生成一份符合 PMP 标准的精美纸面汇报文档。
+              <h3 data-i18n="exp_report_title">📄 Executive Project Status Report</h3>
+              <p style="font-size:13px; color:var(--text-secondary); margin: 10px 0 15px 0; line-height: 1.6;" data-i18n="exp_report_desc">
+                Generate a comprehensive executive project status report compiling management plans, Gantt charts, EVM graphs, and active critical risks.
               </p>
-              <p style="font-size:12px; color:var(--status-warning);">
-                💡 提示：在点击“生成并打印”后，在系统的打印对话框中选择“保存为 PDF”，即可导出为项目周报/月报交付件。
+              <p style="font-size:12px; color:var(--status-warning);" data-i18n="exp_report_tip">
+                💡 Note: In the print dialog, choose 'Save as PDF' to export a PDF document.
               </p>
             </div>
-            <button class="btn btn-primary" id="btn-generate-print-report" style="width:100%; margin-top:20px; padding:12px;">
-              🖨️ 生成并打开打印报告
+            <button class="btn btn-primary" id="btn-generate-print-report" style="width:100%; margin-top:20px; padding:12px;" data-i18n="exp_btn_print">
+              🖨️ Generate & Print Report
             </button>
           </div>
         </div>
@@ -451,7 +513,7 @@
     <div class="modal-overlay" id="global-modal-overlay">
       <div class="modal-container">
         <div class="modal-header">
-          <h3 id="modal-title">弹窗标题</h3>
+          <h3 id="modal-title">Modal Title</h3>
           <button class="modal-close-btn" id="btn-close-modal">&times;</button>
         </div>
         <form id="modal-form">
@@ -459,8 +521,8 @@
             <!-- Dynamic Form Fields -->
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="btn-cancel-modal">取消</button>
-            <button type="submit" class="btn btn-primary" id="btn-submit-modal">保存</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-modal" data-i18n="btn_cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-modal" data-i18n="btn_save">Save</button>
           </div>
         </form>
       </div>
@@ -469,7 +531,7 @@
     <!-- Toast alerts deck -->
     <div class="toast-notification" id="toast-banner">
       <span id="toast-icon">ℹ️</span>
-      <span id="toast-text">通知内容</span>
+      <span id="toast-text">Notification Content</span>
     </div>
 
   </div>

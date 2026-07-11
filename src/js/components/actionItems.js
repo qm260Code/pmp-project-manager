@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export class ActionItemsComponent {
   constructor(container) {
@@ -33,7 +34,7 @@ export class ActionItemsComponent {
       this.tableBody.innerHTML = `
         <tr>
           <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px 0;">
-            暂无待完成事项，请点击右上角新增。
+            No action items logged. Click upper right to add.
           </td>
         </tr>
       `;
@@ -42,26 +43,23 @@ export class ActionItemsComponent {
 
     let html = '';
     actionItems.forEach(item => {
-      // Map priority to styled badge
-      let priorityClass = 'badge-executing'; // default Low
-      let priorityLabel = '低 (Low)';
+      let priorityClass = 'badge-executing'; 
+      let priorityLabel = t('act_priority_low');
       if (item.priority === 'High') {
-        priorityClass = 'badge-closing'; // Red
-        priorityLabel = '高 (High)';
+        priorityClass = 'badge-closing'; 
+        priorityLabel = t('act_priority_high');
       } else if (item.priority === 'Medium') {
-        priorityClass = 'badge-monitoring'; // Orange/Yellow
-        priorityLabel = '中 (Medium)';
+        priorityClass = 'badge-monitoring'; 
+        priorityLabel = t('act_priority_med');
       } else if (item.priority === 'Low') {
-        priorityClass = 'badge-executing'; // Green
-        priorityLabel = '低 (Low)';
+        priorityClass = 'badge-executing'; 
+        priorityLabel = t('act_priority_low');
       }
 
-      // Map status to styled badge / quick checkbox toggle
       const isCompleted = item.status === 'Completed';
       const statusClass = isCompleted ? 'badge-executing' : 'badge-planning';
-      const statusLabel = isCompleted ? '已完成' : '待处理';
+      const statusLabel = isCompleted ? t('act_status_completed') : t('act_status_pending');
 
-      // Red text if pending and target date has passed
       const today = new Date().toISOString().split('T')[0];
       const isOverdue = !isCompleted && item.targetDate < today;
       const dateStyle = isOverdue ? 'color: var(--status-danger); font-weight: 600;' : '';
@@ -80,13 +78,13 @@ export class ActionItemsComponent {
             <div style="font-weight: 500; font-size: 13px;">${this.escapeHTML(item.owner)}</div>
           </td>
           <td>
-            <div style="font-size: 12px; ${dateStyle}" title="${isOverdue ? '已延期逾期！' : ''}">
+            <div style="font-size: 12px; ${dateStyle}" title="${isOverdue ? 'Overdue!' : ''}">
               ${item.targetDate} ${isOverdue ? ' ⚠️' : ''}
             </div>
           </td>
           <td>
             <div style="font-size: 13px; font-weight: 600; color: ${item.delayDays > 0 ? 'var(--status-warning)' : 'var(--text-muted)'};">
-              ${item.delayDays} 天
+              ${item.delayDays}${t('act_delay_unit')}
             </div>
           </td>
           <td>
@@ -94,14 +92,14 @@ export class ActionItemsComponent {
           </td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" class="action-item-toggle" data-id="${item.id}" ${isCompleted ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px;" title="点击切换状态" />
+              <input type="checkbox" class="action-item-toggle" data-id="${item.id}" ${isCompleted ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px;" title="Toggle Status" />
               <span class="badge ${statusClass}">${statusLabel}</span>
             </div>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-action" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">编辑</button>
-              <button class="btn btn-danger btn-delete-action" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">删除</button>
+              <button class="btn btn-secondary btn-edit-action" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger btn-delete-action" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -119,7 +117,7 @@ export class ActionItemsComponent {
           store.updateActionItem(id, { status: newStatus });
           store.publish('notify', { 
             type: 'success', 
-            message: `事项状态已切换为: ${newStatus === 'Completed' ? '已完成' : '待处理'}` 
+            message: `Action status updated to: ${newStatus === 'Completed' ? 'Completed' : 'Pending'}` 
           });
         }
       });
@@ -137,9 +135,9 @@ export class ActionItemsComponent {
     this.tableBody.querySelectorAll('.btn-delete-action').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('确定要删除此项待完成事项吗？')) {
+        if (confirm('Are you sure you want to delete this action item?')) {
           store.deleteActionItem(id);
-          store.publish('notify', { type: 'success', message: '已删除待完成事项。' });
+          store.publish('notify', { type: 'success', message: 'Action item deleted.' });
         }
       });
     });
@@ -147,8 +145,9 @@ export class ActionItemsComponent {
 
   getFormHtml(item = null) {
     const team = store.state.team || [];
+    const lang = store.state.language || 'en';
+    const isEn = lang !== 'zh';
     
-    // Generate owner select dropdown populated from team members
     let ownerFieldHtml = '';
     if (team.length > 0) {
       ownerFieldHtml = `
@@ -161,57 +160,61 @@ export class ActionItemsComponent {
         </select>
       `;
     } else {
+      const tipText = isEn ?
+        'Tip: Add team members in the "Team Structure" view first to select them here.' :
+        '💡 提示：在“团队组织架构”中添加成员后，此处可直接下拉选择。';
+
       ownerFieldHtml = `
         <input type="text" id="item-owner" name="owner" class="form-control" 
                value="${item ? this.escapeHTML(item.owner) : ''}" 
-               placeholder="如：李国强" required>
-        <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">💡 提示：在“团队组织架构”中添加成员后，此处可直接下拉选择。</p>
+               placeholder="e.g. John Doe" required>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">${tipText}</p>
       `;
     }
 
     return `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="item-content">待完成事项内容:</label>
-          <textarea id="item-content" name="content" class="form-control" style="height:60px;" placeholder="输入待办任务或工作包的说明..." required>${item ? item.content : ''}</textarea>
+          <label for="item-content">${t('label_act_content')}</label>
+          <textarea id="item-content" name="content" class="form-control" style="height:60px;" placeholder="e.g. Test IoT temperature sensors..." required>${item ? item.content : ''}</textarea>
         </div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="item-trigger-date">触发日期 (Trigger Date):</label>
+            <label for="item-trigger-date">${t('label_act_trigger')}</label>
             <input type="date" id="item-trigger-date" name="triggerDate" class="form-control" value="${item ? item.triggerDate : new Date().toISOString().split('T')[0]}" required>
           </div>
           <div class="form-group">
-            <label for="item-target-date">期望完成日期 (Target Date):</label>
+            <label for="item-target-date">${t('label_act_target')}</label>
             <input type="date" id="item-target-date" name="targetDate" class="form-control" value="${item ? item.targetDate : ''}" required>
           </div>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="item-owner">负责人 (Owner):</label>
+            <label for="item-owner">${t('label_act_owner')}</label>
             ${ownerFieldHtml}
           </div>
           <div class="form-group">
-            <label for="item-delay-days">延迟天数 (Delay Days):</label>
+            <label for="item-delay-days">${t('label_member_reports') === 'Reports To (Supervisor):' ? 'Delay Days:' : '延迟天数:'}</label>
             <input type="number" id="item-delay-days" name="delayDays" min="0" class="form-control" value="${item ? item.delayDays : 0}" required>
           </div>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="item-priority">优先级 (Priority):</label>
+            <label for="item-priority">${t('label_act_priority')}</label>
             <select id="item-priority" name="priority" class="form-control">
-              <option value="High" ${item && item.priority === 'High' ? 'selected' : ''}>高 (High)</option>
-              <option value="Medium" ${item && item.priority === 'Medium' ? 'selected' : ''}>中 (Medium)</option>
-              <option value="Low" ${item && item.priority === 'Low' || !item ? 'selected' : ''}>低 (Low)</option>
+              <option value="High" ${item && item.priority === 'High' ? 'selected' : ''}>${t('act_priority_high')}</option>
+              <option value="Medium" ${item && item.priority === 'Medium' ? 'selected' : ''}>${t('act_priority_med')}</option>
+              <option value="Low" ${item && item.priority === 'Low' || !item ? 'selected' : ''}>${t('act_priority_low')}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="item-status">当前状态 (Status):</label>
+            <label for="item-status">${t('label_act_status')}</label>
             <select id="item-status" name="status" class="form-control">
-              <option value="Pending" ${item && item.status === 'Pending' || !item ? 'selected' : ''}>待处理 (Pending)</option>
-              <option value="Completed" ${item && item.status === 'Completed' ? 'selected' : ''}>已完成 (Completed)</option>
+              <option value="Pending" ${item && item.status === 'Pending' || !item ? 'selected' : ''}>${t('act_status_pending')}</option>
+              <option value="Completed" ${item && item.status === 'Completed' ? 'selected' : ''}>${t('act_status_completed')}</option>
             </select>
           </div>
         </div>
@@ -221,7 +224,7 @@ export class ActionItemsComponent {
 
   openAddModal() {
     ModalHelper.open(
-      '新增待完成事项',
+      t('modal_act_add'),
       this.getFormHtml(null),
       (data) => {
         store.addActionItem({
@@ -233,7 +236,7 @@ export class ActionItemsComponent {
           priority: data.priority,
           status: data.status
         });
-        store.publish('notify', { type: 'success', message: '已成功添加待完成事项。' });
+        store.publish('notify', { type: 'success', message: 'Action item created.' });
         return true;
       }
     );
@@ -241,7 +244,7 @@ export class ActionItemsComponent {
 
   openEditModal(item) {
     ModalHelper.open(
-      `编辑待完成事项`,
+      t('modal_act_edit'),
       this.getFormHtml(item),
       (data) => {
         store.updateActionItem(item.id, {
@@ -253,7 +256,7 @@ export class ActionItemsComponent {
           priority: data.priority,
           status: data.status
         });
-        store.publish('notify', { type: 'success', message: '待完成事项已更新。' });
+        store.publish('notify', { type: 'success', message: 'Action item details updated.' });
         return true;
       }
     );

@@ -1,12 +1,29 @@
 import { store } from '../store.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export const PmpDocumentEditor = {
   /**
-   * Templates for documents when empty
+   * Templates for documents when empty (Bilingual)
    */
   templates: {
-    developProjectCharter: `# 项目章程 (Project Charter)
+    developProjectCharter: (lang) => {
+      const isEn = lang !== 'zh';
+      return isEn ? `# 1. Project Charter
+## 1.1 Project Background & Purpose
+[Describe the business case, background and core pain points being addressed]
+
+## 1.2 Deliverables & Objectives
+* Objective 1:
+* Objective 2:
+
+## 1.3 High-Level Milestones
+1. Milestone 1:
+2. Milestone 2:
+
+## 1.4 Project Sponsor & Authorization
+Project Manager:
+Sponsor Signature:` : `# 项目章程 (Project Charter)
 ## 一、项目背景与目的
 [在此输入项目启动的背景原因，解决什么商业痛点]
 
@@ -20,9 +37,26 @@ export const PmpDocumentEditor = {
 
 ## 四、项目发起人(Sponsor)及高层授权
 项目经理：
-发起人签字：`,
+发起人签字：`;
+    },
 
-    developProjectManagementPlan: `# 项目管理计划 (Project Management Plan)
+    developProjectManagementPlan: (lang) => {
+      const isEn = lang !== 'zh';
+      return isEn ? `# 2. Project Management Plan
+## 2.1 Project Lifecycle & Methodology
+[Describe whether the project follows predictive, agile or hybrid methodologies]
+
+## 2.2 Core Management Sub-plans
+1. Scope Management Plan:
+2. Schedule Management Plan:
+3. Cost Management Plan:
+4. Quality Management Plan:
+5. Risk Management Plan:
+
+## 2.3 Baseline Configurations
+* Scope Baseline:
+* Schedule Baseline:
+* Cost Baseline:` : `# 项目管理计划 (Project Management Plan)
 ## 一、项目生命周期及过程方法
 [描述项目采用预测型、敏捷型还是混合型生命周期]
 
@@ -36,9 +70,22 @@ export const PmpDocumentEditor = {
 ## 三、基准配置 (Baselines)
 * 范围基准 (Scope Baseline)：
 * 进度基准 (Schedule Baseline)：
-* 成本基准 (Cost Baseline)：`,
+* 成本基准 (Cost Baseline)：`;
+    },
 
-    defineScope: `# 范围说明书 (Project Scope Statement)
+    defineScope: (lang) => {
+      const isEn = lang !== 'zh';
+      return isEn ? `# 3. Project Scope Statement
+## 3.1 In Scope
+[Detail product features, scope boundaries and specific deliverables]
+
+## 3.2 Acceptance Criteria
+* Deliverable 1 Criteria:
+* Deliverable 2 Criteria:
+
+## 3.3 Out of Scope
+* Excluded 1:
+* Excluded 2:` : `# 范围说明书 (Project Scope Statement)
 ## 一、项目范围描述 (In Scope)
 [详细描述项目要交付的具体产品或服务内容]
 
@@ -48,9 +95,22 @@ export const PmpDocumentEditor = {
 
 ## 三、项目边界与除外情况 (Out of Scope)
 * 明确不包含：
-* 明确不包含：`,
+* 明确不包含：`;
+    },
 
-    planQualityManagement: `# 质量管理计划 (Quality Management Plan)
+    planQualityManagement: (lang) => {
+      const isEn = lang !== 'zh';
+      return isEn ? `# 4. Quality Management Plan
+## 4.1 Quality Standards
+[Reference industrial standards, regulatory specs or internal company guidelines]
+
+## 4.2 Quality Metrics & KPIs
+* Metric 1:
+* Metric 2:
+
+## 4.3 Quality Assurance (QA) & Quality Control (QC) Activities
+* QA Audits:
+* QC Testing Frequencies:` : `# 质量管理计划 (Quality Management Plan)
 ## 一、项目质量标准
 [参照的国家标准、行业标准或集团内部规范]
 
@@ -60,39 +120,48 @@ export const PmpDocumentEditor = {
 
 ## 三、质量保证 (QA) 与质量控制 (QC) 活动
 * QA 审计安排：
-* QC 检查频次：`,
+* QC 检查频次：`;
+    },
 
-    planCommunicationsManagement: `# 沟通管理计划 (Communications Management Plan)
+    planCommunicationsManagement: (lang) => {
+      const isEn = lang !== 'zh';
+      return isEn ? `# 5. Communications Management Plan
+## 5.1 Communication Needs Analysis
+[Identify who needs what information, when and in what format]
+
+## 5.2 Communications Strategy Matrix
+* **Meetings**: Stakeholders, frequency, format.
+* **Reports**: Target audience, frequency, delivery path.
+* **Escalations**: Escalation chain and decision paths.` : `# 沟通管理计划 (Communications Management Plan)
 ## 一、沟通需求分析
 [各利益相关方所需要的关键信息、格式及获取时间]
 
 ## 二、沟通策略矩阵
 * **例会**：对象、频率、汇报形式。
 * **报告**：对象、频率、发送方式。
-* **变更升级**：决策流程及审批链条。`,
+* **变更升级**：决策流程及审批链条。`;
+    },
 
-    // Dynamic template fallback for any standard PMP processes
-    generic: (kaName, pgName, processName) => `# ${processName} (PMP 记录)
-* **知识领域**: ${kaName}
-* **过程组**: ${pgName}
-* **最后更新人**: ${store.state.projectInfo.manager}
-* **状态**: 草稿
+    generic: (kaName, pgName, processName, lang) => {
+      const isEn = lang !== 'zh';
+      return `# ${processName} (PMP Record)
+* **${isEn ? 'Knowledge Area' : '知识领域'}**: ${kaName}
+* **${isEn ? 'Process Group' : '过程组'}**: ${pgName}
+* **${isEn ? 'Last Updated By' : '最后更新人'}**: ${store.state.projectInfo.manager}
+* **${isEn ? 'Status' : '状态'}**: Draft
 
-## 一、过程输入 (Inputs)
+## ${isEn ? 'I. Inputs' : '一、过程输入 (Inputs)'}
 * 
 
-## 二、工具与技术 (Tools & Techniques)
+## ${isEn ? 'II. Tools & Techniques' : '二、工具与技术 (Tools & Techniques)'}
 * 
 
-## 三、过程输出 / 实战记录 (Outputs / Log)
-[在此记录本阶段该领域的活动执行情况、变更备忘录或输出结果]`
+## ${isEn ? 'III. Outputs / Deliverable Log' : '三、过程输出 / 实战记录 (Outputs / Log)'}
+[Record project activities, changes and outputs here.]`;
+    }
   },
 
-  /**
-   * Translates a cell process to its document storage key
-   */
   getDocKey(kaKey, pgKey, processId) {
-    // Check if it's one of the primary document keys prefilled in initialData
     const mapping = {
       'integration_initiating_1': 'developProjectCharter',
       'integration_planning_2': 'developProjectManagementPlan',
@@ -103,39 +172,47 @@ export const PmpDocumentEditor = {
     return mapping[processId] || `doc_${kaKey}_${pgKey}_${processId}`;
   },
 
-  /**
-   * Opens the editor in the modal shell
-   */
   openEditor(kaName, pgName, processId, processName, docKey) {
     const state = store.state;
+    const lang = state.language || 'en';
+    const isEn = lang !== 'zh';
+    
     let text = state.documents[docKey] || '';
     
-    // Auto-generate template if document is empty
     if (!text.trim()) {
       if (this.templates[docKey]) {
-        text = this.templates[docKey];
+        text = this.templates[docKey](lang);
       } else {
-        text = this.templates.generic(kaName, pgName, processName);
+        text = this.templates.generic(kaName, pgName, processName, lang);
       }
     }
 
-    // Determine status badge
     let status = 'not-started';
     if (state.documents[docKey]) {
-      status = text.includes('状态: 最终') || text.includes('状态: 发布') ? 'final' : 'draft';
+      status = text.includes('状态: 定稿') || text.includes('status: final') || text.includes('Status: Final') || text.includes('状态: 定稿发布') || text.includes('状态: 最终') ? 'final' : 'draft';
     }
+
+    const labelKa = isEn ? 'Knowledge Area' : '知识领域';
+    const labelPg = isEn ? 'Process Group' : '过程组';
+    const labelStatus = isEn ? 'Release Status' : '发布状态';
+    const labelDraft = isEn ? 'Drafting (Draft)' : '草稿中 (Draft)';
+    const labelFinal = isEn ? 'Finalized (Final)' : '定稿发布 (Final)';
+    const labelTip = isEn ? 
+      '💡 Hint: Standard Markdown format is supported. Saving writes directly to local storage.' :
+      '💡 提示：该文档支持标准 Markdown 格式。完成修改后点击“保存”会自动写入 LocalStorage。';
+    const labelSaveBtn = isEn ? 'Save' : '保存';
 
     const bodyHtml = `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:12px; color:var(--text-muted);">
-            知识领域: <strong>${kaName}</strong> | 过程组: <strong>${pgName}</strong>
+            ${labelKa}: <strong>${kaName}</strong> | ${labelPg}: <strong>${pgName}</strong>
           </span>
           <div class="form-group" style="margin-bottom:0; display:flex; align-items:center; gap:8px;">
-            <label for="doc-status" style="margin-bottom:0;">发布状态:</label>
-            <select name="status" id="doc-status" class="form-control" style="width:110px; padding:4px 8px;">
-              <option value="draft" ${status === 'draft' || status === 'not-started' ? 'selected' : ''}>草稿中 (Draft)</option>
-              <option value="final" ${status === 'final' ? 'selected' : ''}>定稿发布 (Final)</option>
+            <label for="doc-status" style="margin-bottom:0;">${labelStatus}:</label>
+            <select name="status" id="doc-status" class="form-control" style="width:130px; padding:4px 8px;">
+              <option value="draft" ${status === 'draft' || status === 'not-started' ? 'selected' : ''}>${labelDraft}</option>
+              <option value="final" ${status === 'final' ? 'selected' : ''}>${labelFinal}</option>
             </select>
           </div>
         </div>
@@ -145,30 +222,29 @@ export const PmpDocumentEditor = {
         </div>
         
         <p style="font-size:11px; color:var(--text-muted); margin-bottom:0;">
-          💡 提示：该文档支持标准 Markdown 格式。完成修改后点击“保存”会自动写入 LocalStorage。
+          ${labelTip}
         </p>
       </div>
     `;
 
     ModalHelper.open(
-      `编辑：${processName}`,
+      `${isEn ? 'Edit' : '编辑'}：${processName}`,
       bodyHtml,
       (data) => {
         let textToSave = data.documentText || '';
         
-        // Append status line to generic template if selected final
         if (data.status === 'final') {
-          if (!textToSave.includes('状态: 定稿发布') && !textToSave.includes('状态: 最终')) {
+          if (!textToSave.includes('Status: Final') && !textToSave.includes('状态: 定稿发布') && !textToSave.includes('状态: 最终')) {
+            textToSave = textToSave.replace(/Status: (Draft|Not Started)/g, 'Status: Final');
             textToSave = textToSave.replace(/状态: (草稿|未开始)/g, '状态: 定稿发布');
           }
         }
         
-        // Save to central store
         store.updateDocument(docKey, textToSave);
-        store.publish('notify', { type: 'success', message: `《${processName}》文档保存成功` });
+        store.publish('notify', { type: 'success', message: isEn ? `"${processName}" document saved successfully.` : `《${processName}》文档保存成功` });
         return true;
       },
-      '保存更新'
+      labelSaveBtn
     );
   }
 };

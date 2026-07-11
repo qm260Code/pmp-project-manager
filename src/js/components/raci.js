@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export class RaciComponent {
   constructor(container) {
@@ -21,29 +22,34 @@ export class RaciComponent {
   }
 
   render() {
+    const lang = store.state.language || 'en';
     const raci = store.state.raci;
     const roles = raci.roles || [];
     const matrix = raci.matrix || [];
     
+    const optLabels = lang === 'zh' ? 
+      { R: 'R (负责)', A: 'A (批准)', C: 'C (咨询)', I: 'I (知会)' } :
+      { R: 'R (Responsible)', A: 'A (Accountable)', C: 'C (Consulted)', I: 'I (Informed)' };
+
     if (roles.length === 0) {
       this.container.innerHTML = `
         <thead>
-          <tr><th>无角色配置</th></tr>
+          <tr><th>${t('raci_no_roles')}</th></tr>
         </thead>
         <tbody>
-          <tr><td style="color:var(--text-muted); text-align:center;">请先点击右上角“配置角色”按钮。</td></tr>
+          <tr><td style="color:var(--text-muted); text-align:center;">${t('raci_configure_hint')}</td></tr>
         </tbody>
       `;
       return;
     }
 
-    // Build Table Header
+    // Build Table Header with min-width constraints for scrolling
     let html = `
       <thead>
         <tr>
-          <th style="min-width: 200px;">活动 / 交付物名称</th>
-          ${roles.map(r => `<th style="text-align:center;">${r}</th>`).join('')}
-          <th style="width:80px; text-align:center;">操作</th>
+          <th style="min-width: 220px; font-family:'Outfit', sans-serif;">${t('raci_activity_name')}</th>
+          ${roles.map(r => `<th style="text-align:center; min-width: 140px; font-family:'Outfit', sans-serif;">${r}</th>`).join('')}
+          <th style="width:80px; text-align:center; min-width: 80px; font-family:'Outfit', sans-serif;">${t('raci_action')}</th>
         </tr>
       </thead>
       <tbody>
@@ -53,7 +59,7 @@ export class RaciComponent {
       html += `
         <tr>
           <td colspan="${roles.length + 2}" style="text-align:center; color:var(--text-muted); padding:20px;">
-            暂无活动职责分配，请点击右上角新增活动。
+            ${t('btn_empty_raci')}
           </td>
         </tr>
       `;
@@ -61,7 +67,7 @@ export class RaciComponent {
       matrix.forEach((row, rowIndex) => {
         html += `
           <tr>
-            <td style="font-weight: 600; color: var(--text-primary);">${row.activity}</td>
+            <td style="font-weight: 600; color: var(--text-primary); min-width: 220px;">${row.activity}</td>
             ${roles.map(role => {
               const val = row.roles[role] || '';
               
@@ -73,23 +79,23 @@ export class RaciComponent {
               else if (val === 'I') valClass = 'raci-i';
 
               return `
-                <td style="text-align:center;">
+                <td style="text-align:center; min-width: 140px;">
                   <select class="raci-cell-select ${valClass}" 
                           data-row="${rowIndex}" 
                           data-role="${role}" 
                           style="text-align-last: center;">
                     <option value="" ${val === '' ? 'selected' : ''}>-</option>
-                    <option value="R" class="raci-r" ${val === 'R' ? 'selected' : ''}>R (负责)</option>
-                    <option value="A" class="raci-a" ${val === 'A' ? 'selected' : ''}>A (批准)</option>
-                    <option value="C" class="raci-c" ${val === 'C' ? 'selected' : ''}>C (咨询)</option>
-                    <option value="I" class="raci-i" ${val === 'I' ? 'selected' : ''}>I (知会)</option>
+                    <option value="R" class="raci-r" ${val === 'R' ? 'selected' : ''}>${optLabels.R}</option>
+                    <option value="A" class="raci-a" ${val === 'A' ? 'selected' : ''}>${optLabels.A}</option>
+                    <option value="C" class="raci-c" ${val === 'C' ? 'selected' : ''}>${optLabels.C}</option>
+                    <option value="I" class="raci-i" ${val === 'I' ? 'selected' : ''}>${optLabels.I}</option>
                   </select>
                 </td>
               `;
             }).join('')}
-            <td style="text-align:center;">
+            <td style="text-align:center; min-width: 80px;">
               <button class="btn btn-danger btn-delete-raci" data-index="${rowIndex}" style="padding: 2px 6px; font-size:11px;">
-                &times; 删
+                &times; ${t('btn_delete')}
               </button>
             </td>
           </tr>
@@ -122,9 +128,9 @@ export class RaciComponent {
     deleteBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const index = Number(btn.getAttribute('data-index'));
-        if (confirm('确定要删除这项活动的 RACI 分配记录吗？')) {
+        if (confirm(t('raci_delete_confirm') || 'Are you sure you want to delete this activity assignment?')) {
           store.deleteRaciActivity(index);
-          store.publish('notify', { type: 'success', message: '已成功移除活动职责行。' });
+          store.publish('notify', { type: 'success', message: 'Activity successfully removed.' });
         }
       });
     });
@@ -137,17 +143,17 @@ export class RaciComponent {
     const bodyHtml = `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="raci-roles-input">项目角色配置 (以英文逗号分隔):</label>
-          <input type="text" id="raci-roles-input" name="rolesStr" class="form-control" value="${rolesStr}" placeholder="如：PM, Architect, Sponsor, QA" required>
+          <label for="raci-roles-input">${t('label_raci_roles')}</label>
+          <input type="text" id="raci-roles-input" name="rolesStr" class="form-control" value="${rolesStr}" placeholder="${t('placeholder_raci_roles')}" required>
           <p style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-            ⚠️ 警告：修改、增加或删除角色名称后，表格列会自动变更。若重命名角色，其对应的 R/A/C/I 指标会丢失。
+            ${t('raci_roles_warning')}
           </p>
         </div>
       </div>
     `;
 
     ModalHelper.open(
-      '配置 RACI 团队角色',
+      t('modal_raci_roles_title'),
       bodyHtml,
       (data) => {
         const newRoles = data.rolesStr
@@ -156,12 +162,12 @@ export class RaciComponent {
           .filter(Boolean);
         
         if (newRoles.length === 0) {
-          store.publish('notify', { type: 'error', message: '角色配置列表不能为空！' });
+          store.publish('notify', { type: 'error', message: 'Role list cannot be empty!' });
           return false;
         }
 
         store.updateRaciRoles(newRoles);
-        store.publish('notify', { type: 'success', message: 'RACI 团队角色配置已更新。' });
+        store.publish('notify', { type: 'success', message: 'RACI roles updated.' });
         return true;
       }
     );
@@ -171,24 +177,24 @@ export class RaciComponent {
     const bodyHtml = `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="raci-activity-input">新增 RACI 活动 / 交付物名称:</label>
-          <input type="text" id="raci-activity-input" name="activityName" class="form-control" placeholder="如：评审项目测试报告" required>
+          <label for="raci-activity-input">${t('label_raci_activity')}</label>
+          <input type="text" id="raci-activity-input" name="activityName" class="form-control" placeholder="${t('placeholder_raci_activity')}" required>
         </div>
       </div>
     `;
 
     ModalHelper.open(
-      '新增 RACI 评估项',
+      t('modal_raci_activity_title'),
       bodyHtml,
       (data) => {
         const name = data.activityName ? data.activityName.trim() : '';
         if (!name) {
-          store.publish('notify', { type: 'error', message: '活动名称不能为空。' });
+          store.publish('notify', { type: 'error', message: 'Activity name cannot be empty.' });
           return false;
         }
 
         store.addRaciActivity(name);
-        store.publish('notify', { type: 'success', message: 'RACI 活动行已追加。' });
+        store.publish('notify', { type: 'success', message: 'RACI activity added.' });
         return true;
       }
     );

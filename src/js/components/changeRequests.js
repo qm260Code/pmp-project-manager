@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export class ChangeRequestsComponent {
   constructor(container) {
@@ -32,26 +33,34 @@ export class ChangeRequestsComponent {
     const pending = crs.filter(c => c.status === 'Pending').length;
     const closed = crs.filter(c => c.status === 'Closed' || c.status === 'Rejected').length;
 
+    const lang = store.state.language || 'en';
+    const isEn = lang !== 'zh';
+
+    const descTotal = isEn ? 'All submitted change logs' : '已提交的所有变更单';
+    const descApproved = isEn ? 'CCB approved & executed' : '已通过CCB评审并执行';
+    const descPending = isEn ? 'Awaiting CCB review meeting' : '等待CCB会议评审决定';
+    const descClosed = isEn ? 'Archived or rejected requests' : '已归档或被驳回的变更';
+
     this.kpiContainer.innerHTML = `
-      <div class="kpi-card" style="border-left: 4px solid var(--accent-secondary);">
-        <div class="kpi-label">变更申请总数 (Total CRs)</div>
+      <div class="glass-panel kpi-card" style="border-left: 4px solid var(--accent-secondary);">
+        <div class="kpi-label">${t('cr_kpi_total')}</div>
         <div class="kpi-value">${total}</div>
-        <div class="kpi-subtext">已提交的所有变更单</div>
+        <div class="kpi-subtext" style="font-size:11px; color:var(--text-muted); margin-top:4px;">${descTotal}</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--status-success);">
-        <div class="kpi-label">已批准变更 (Approved)</div>
+      <div class="glass-panel kpi-card" style="border-left: 4px solid var(--status-success);">
+        <div class="kpi-label">${t('cr_kpi_approved')}</div>
         <div class="kpi-value" style="color: var(--status-success);">${approved}</div>
-        <div class="kpi-subtext">已通过CCB评审并执行</div>
+        <div class="kpi-subtext" style="font-size:11px; color:var(--text-muted); margin-top:4px;">${descApproved}</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--status-warning);">
-        <div class="kpi-label">待决策审批 (Pending)</div>
+      <div class="glass-panel kpi-card" style="border-left: 4px solid var(--status-warning);">
+        <div class="kpi-label">${t('cr_kpi_pending')}</div>
         <div class="kpi-value" style="color: var(--status-warning);">${pending}</div>
-        <div class="kpi-subtext">等待CCB会议评审决定</div>
+        <div class="kpi-subtext" style="font-size:11px; color:var(--text-muted); margin-top:4px;">${descPending}</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--text-muted);">
-        <div class="kpi-label">已关闭/已拒绝</div>
+      <div class="glass-panel kpi-card" style="border-left: 4px solid var(--text-muted);">
+        <div class="kpi-label">${t('cr_kpi_closed')}</div>
         <div class="kpi-value">${closed}</div>
-        <div class="kpi-subtext">已归档或被驳回的变更</div>
+        <div class="kpi-subtext" style="font-size:11px; color:var(--text-muted); margin-top:4px;">${descClosed}</div>
       </div>
     `;
   }
@@ -61,32 +70,36 @@ export class ChangeRequestsComponent {
       this.tableBody.innerHTML = `
         <tr>
           <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">
-            暂无项目变更管理记录，请点击右上角新增。
+            ${t('btn_empty_crs')}
           </td>
         </tr>
       `;
       return;
     }
 
+    const lang = store.state.language || 'en';
+    const isEn = lang !== 'zh';
+
     let html = '';
     crs.forEach((cr, index) => {
       const crNo = `CR-${String(index + 1).padStart(3, '0')}`;
       
-      let statusClass = 'badge-planning'; // default draft
+      let statusClass = 'badge-planning'; 
       if (cr.status === 'Approved') statusClass = 'badge-executing';
       else if (cr.status === 'Pending') statusClass = 'badge-monitoring';
       else if (cr.status === 'Rejected') statusClass = 'badge-closing';
       else if (cr.status === 'Closed') statusClass = 'badge-initiating';
 
-      // Map category labels
       const catMap = {
-        Scope: '范围变更 (Scope)',
-        Schedule: '进度变更 (Schedule)',
-        Cost: '成本变更 (Cost)',
-        Quality: '质量变更 (Quality)',
-        Other: '其他变更 (Other)'
+        Scope: t('cr_cat_scope'),
+        Schedule: t('cr_cat_schedule'),
+        Cost: t('cr_cat_cost'),
+        Quality: t('cr_cat_quality'),
+        Other: t('cr_cat_other')
       };
-      const categoryLabel = catMap[cr.category] || cr.category || '其他';
+      const categoryLabel = catMap[cr.category] || cr.category || '-';
+      const noImpactText = isEn ? 'No impact assessment' : '暂无影响评估';
+      const noCcbNotesText = isEn ? 'No CCB meeting notes' : '暂无会议纪要';
 
       html += `
         <tr>
@@ -98,23 +111,23 @@ export class ChangeRequestsComponent {
             <span style="font-size: 12px; font-weight: 500;">${categoryLabel}</span>
           </td>
           <td>
-            <div style="font-size: 12px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cr.impactAnalysis}">${cr.impactAnalysis || '暂无影响评估'}</div>
+            <div style="font-size: 12px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cr.impactAnalysis}">${cr.impactAnalysis || noImpactText}</div>
           </td>
           <td>
-            <div style="font-size: 12px; font-weight:600;">${cr.requester || '未分配'}</div>
+            <div style="font-size: 12px; font-weight:600;">${cr.requester || '-'}</div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top:1px;">${cr.dateRaised}</div>
           </td>
           <td>
-            <div style="font-size: 12px; font-weight:600;">审批: ${cr.approver || '未指定'}</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top:1px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cr.ccbNotes || ''}">${cr.ccbNotes || '暂无会议纪要'}</div>
+            <div style="font-size: 12px; font-weight:600;">${isEn ? 'CCB Decider' : '审批'}: ${cr.approver || '-'}</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top:1px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cr.ccbNotes || ''}">${cr.ccbNotes || noCcbNotesText}</div>
           </td>
           <td>
             <span class="badge ${statusClass}">${cr.status}</span>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">编辑</button>
-              <button class="btn btn-danger btn-delete-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">删除</button>
+              <button class="btn btn-secondary btn-edit-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger btn-delete-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -123,7 +136,6 @@ export class ChangeRequestsComponent {
     
     this.tableBody.innerHTML = html;
 
-    // Bind edit/delete click handlers
     this.tableBody.querySelectorAll('.btn-edit-cr').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
@@ -135,9 +147,9 @@ export class ChangeRequestsComponent {
     this.tableBody.querySelectorAll('.btn-delete-cr').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('确定要彻底删除这条项目变更单吗？删除后不可恢复。')) {
+        if (confirm('Are you sure you want to delete this change request log? This cannot be undone.')) {
           store.deleteChangeRequest(id);
-          store.publish('notify', { type: 'success', message: '已成功删除变更单记录。' });
+          store.publish('notify', { type: 'success', message: 'Change request entry deleted.' });
         }
       });
     });
@@ -147,52 +159,52 @@ export class ChangeRequestsComponent {
     return `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="cr-desc">变更描述 / 变更名称:</label>
-          <input type="text" id="cr-desc" name="description" class="form-control" value="${cr.description || ''}" placeholder="如：物联网模块接口新增数据校验规则" required>
+          <label for="cr-desc">${t('label_cr_desc')}</label>
+          <input type="text" id="cr-desc" name="description" class="form-control" value="${cr.description || ''}" placeholder="e.g. Add validation logic to WMS input fields" required>
         </div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="cr-cat">变更分类 (Category):</label>
+            <label for="cr-cat">${t('label_cr_cat')}</label>
             <select id="cr-cat" name="category" class="form-control">
-              <option value="Scope" ${cr.category === 'Scope' ? 'selected' : ''}>范围变更 (Scope)</option>
-              <option value="Schedule" ${cr.category === 'Schedule' ? 'selected' : ''}>进度变更 (Schedule)</option>
-              <option value="Cost" ${cr.category === 'Cost' ? 'selected' : ''}>成本变更 (Cost)</option>
-              <option value="Quality" ${cr.category === 'Quality' ? 'selected' : ''}>质量变更 (Quality)</option>
-              <option value="Other" ${cr.category === 'Other' || !cr.category ? 'selected' : ''}>其他变更 (Other)</option>
+              <option value="Scope" ${cr.category === 'Scope' ? 'selected' : ''}>${t('cr_cat_scope')}</option>
+              <option value="Schedule" ${cr.category === 'Schedule' ? 'selected' : ''}>${t('cr_cat_schedule')}</option>
+              <option value="Cost" ${cr.category === 'Cost' ? 'selected' : ''}>${t('cr_cat_cost')}</option>
+              <option value="Quality" ${cr.category === 'Quality' ? 'selected' : ''}>${t('cr_cat_quality')}</option>
+              <option value="Other" ${cr.category === 'Other' || !cr.category ? 'selected' : ''}>${t('cr_cat_other')}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="cr-requester">申请人 (Requester):</label>
-            <input type="text" id="cr-requester" name="requester" class="form-control" value="${cr.requester || ''}" placeholder="如：李国强" required>
+            <label for="cr-requester">${t('label_cr_requester')}</label>
+            <input type="text" id="cr-requester" name="requester" class="form-control" value="${cr.requester || ''}" placeholder="e.g. John Doe" required>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="cr-impact">变更原因及影响分析 (Impact Analysis):</label>
-          <textarea id="cr-impact" name="impactAnalysis" class="form-control" style="height:70px;" placeholder="评估对范围、进度和成本的影响。如：为解决丢包问题新增LoRa中继，导致硬件成本增加1500元，进度无影响。" required>${cr.impactAnalysis || ''}</textarea>
+          <label for="cr-impact">${t('label_cr_impact')}</label>
+          <textarea id="cr-impact" name="impactAnalysis" class="form-control" style="height:70px;" placeholder="Assess impact on scope, schedule, and cost." required>${cr.impactAnalysis || ''}</textarea>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px dashed var(--border-color); padding-top:12px; margin-top:4px;">
           <div class="form-group">
-            <label for="cr-status">变更审批状态 (CCB Status):</label>
+            <label for="cr-status">${t('label_cr_status')}</label>
             <select id="cr-status" name="status" class="form-control">
-              <option value="Draft" ${cr.status === 'Draft' ? 'selected' : ''}>草稿 (Draft)</option>
-              <option value="Pending" ${cr.status === 'Pending' || !cr.status ? 'selected' : ''}>审批决策中 (Pending)</option>
-              <option value="Approved" ${cr.status === 'Approved' ? 'selected' : ''}>已批准执行 (Approved)</option>
-              <option value="Rejected" ${cr.status === 'Rejected' ? 'selected' : ''}>已拒绝驳回 (Rejected)</option>
-              <option value="Closed" ${cr.status === 'Closed' ? 'selected' : ''}>已关闭归档 (Closed)</option>
+              <option value="Draft" ${cr.status === 'Draft' ? 'selected' : ''}>Draft</option>
+              <option value="Pending" ${cr.status === 'Pending' || !cr.status ? 'selected' : ''}>Pending</option>
+              <option value="Approved" ${cr.status === 'Approved' ? 'selected' : ''}>Approved</option>
+              <option value="Rejected" ${cr.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+              <option value="Closed" ${cr.status === 'Closed' ? 'selected' : ''}>Closed</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="cr-approver">CCB 审批决策人 (Approver):</label>
-            <input type="text" id="cr-approver" name="approver" class="form-control" value="${cr.approver || ''}" placeholder="如：张建华 (CCB 主席)">
+            <label for="cr-approver">${t('label_cr_approver')}</label>
+            <input type="text" id="cr-approver" name="approver" class="form-control" value="${cr.approver || ''}" placeholder="e.g. Jane Smith (CCB Chair)">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="cr-notes">CCB 会议纪要与决策备注 (Notes):</label>
-          <textarea id="cr-notes" name="ccbNotes" class="form-control" style="height:70px;" placeholder="录入CCB评审会的决策意见或执行人安排。">${cr.ccbNotes || ''}</textarea>
+          <label for="cr-notes">${t('label_cr_notes')}</label>
+          <textarea id="cr-notes" name="ccbNotes" class="form-control" style="height:70px;" placeholder="CCB meeting decision notes...">${cr.ccbNotes || ''}</textarea>
         </div>
       </div>
     `;
@@ -200,7 +212,7 @@ export class ChangeRequestsComponent {
 
   openAddModal() {
     ModalHelper.open(
-      '新建项目变更申请 (New CR)',
+      t('modal_cr_add'),
       this.getFormHtml(),
       (data) => {
         store.addChangeRequest({
@@ -210,9 +222,10 @@ export class ChangeRequestsComponent {
           requester: data.requester,
           status: data.status,
           approver: data.approver,
-          ccbNotes: data.ccbNotes
+          ccbNotes: data.ccbNotes,
+          dateRaised: new Date().toISOString().split('T')[0]
         });
-        store.publish('notify', { type: 'success', message: '变更申请单创建成功，已载入登记册。' });
+        store.publish('notify', { type: 'success', message: 'Change request submitted successfully.' });
         return true;
       }
     );
@@ -220,7 +233,7 @@ export class ChangeRequestsComponent {
 
   openEditModal(cr) {
     ModalHelper.open(
-      `编辑项目变更单: ${cr.description}`,
+      `${t('modal_cr_edit')}: ${cr.description}`,
       this.getFormHtml(cr),
       (data) => {
         store.updateChangeRequest(cr.id, {
@@ -232,7 +245,7 @@ export class ChangeRequestsComponent {
           approver: data.approver,
           ccbNotes: data.ccbNotes
         });
-        store.publish('notify', { type: 'success', message: '变更单更新成功，已保存。' });
+        store.publish('notify', { type: 'success', message: 'Change request details updated.' });
         return true;
       }
     );

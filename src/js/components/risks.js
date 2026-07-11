@@ -1,6 +1,7 @@
 import { store } from '../store.js';
 import { PmpCalculators } from '../utils/pmpCalculators.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export class RisksComponent {
   constructor(container) {
@@ -37,10 +38,14 @@ export class RisksComponent {
   }
 
   renderHeatmap(risks) {
-    // Computes PxI matrix
-    // Y-Axis: Probability (5 descending to 1)
-    // X-Axis: Impact (1 ascending to 5)
-    
+    const lang = store.state.language || 'en';
+    const isEn = lang !== 'zh';
+
+    const pLabel = isEn ? 'P (Prob)' : 'P (概)';
+    const highLabel = isEn ? 'High' : '高';
+    const lowLabel = isEn ? 'Low' : '低';
+    const impactLabel = isEn ? 'Impact Level →' : '影响等级 (Impact) →';
+
     // Aggregate counts for each cell
     const counts = {};
     for (let p = 1; p <= 5; p++) {
@@ -57,12 +62,12 @@ export class RisksComponent {
 
     let html = `
       <!-- Labels -->
-      <div class="heatmap-label-y">P (概)</div>
-      <div class="heatmap-label-y">5 (高)</div>
+      <div class="heatmap-label-y" style="font-weight:700;">${pLabel}</div>
+      <div class="heatmap-label-y">5 (${highLabel})</div>
       <div class="heatmap-label-y">4</div>
       <div class="heatmap-label-y">3</div>
       <div class="heatmap-label-y">2</div>
-      <div class="heatmap-label-y">1 (低)</div>
+      <div class="heatmap-label-y">1 (${lowLabel})</div>
       <div class="heatmap-label-x"></div>
     `;
 
@@ -73,7 +78,6 @@ export class RisksComponent {
         const score = p * i;
         const count = counts[`${p}_${i}`] || 0;
         
-        // Determine risk level based on (p, i) coordinates to match reference image layout
         let level = 'low';
         if (p === 5) {
           if (i === 1) level = 'low';
@@ -108,9 +112,9 @@ export class RisksComponent {
                data-p="${p}" 
                data-i="${i}" 
                style="${borderStyle}"
-               title="概率: ${p} | 影响: ${i}\n风险值得分: ${score}分\n当前有 ${count} 个风险">
-            ${score}
-            ${count > 0 ? `<span class="count">${count}</span>` : ''}
+               title="P: ${p} | I: ${i}\nScore: ${score} pts\nActive risks: ${count}">
+             ${score}
+             ${count > 0 ? `<span class="count">${count}</span>` : ''}
           </div>
         `;
       }
@@ -119,13 +123,13 @@ export class RisksComponent {
     // X-axis label rows
     html += `
       <div class="heatmap-label-x"></div>
-      <div class="heatmap-label-x">1 (低)</div>
+      <div class="heatmap-label-x">1 (${lowLabel})</div>
       <div class="heatmap-label-x">2</div>
       <div class="heatmap-label-x">3</div>
       <div class="heatmap-label-x">4</div>
-      <div class="heatmap-label-x">5 (高)</div>
+      <div class="heatmap-label-x">5 (${highLabel})</div>
       <div class="heatmap-label-x" style="grid-column: span 6; font-size:12px; font-weight:700; color:var(--text-secondary); margin-top:4px;">
-        影响等级 (Impact) →
+        ${impactLabel}
       </div>
     `;
 
@@ -138,7 +142,6 @@ export class RisksComponent {
         const i = Number(cell.getAttribute('data-i'));
         
         if (this.activeFilter && this.activeFilter.p === p && this.activeFilter.i === i) {
-          // Toggle off
           this.activeFilter = null;
         } else {
           this.activeFilter = { p, i };
@@ -149,6 +152,7 @@ export class RisksComponent {
   }
 
   renderTable(risks) {
+    const lang = store.state.language || 'en';
     let filteredRisks = risks;
     
     // Apply heatmap cell filters
@@ -158,7 +162,7 @@ export class RisksComponent {
         Math.max(1, Math.min(5, Number(r.probability || 1))) === p &&
         Math.max(1, Math.min(5, Number(r.impact || 1))) === i
       );
-      this.filterTag.innerHTML = `🔍 筛选: P:${p} / I:${i} &times;`;
+      this.filterTag.innerHTML = `🔍 Filter: P:${p} / I:${i} &times;`;
       this.filterTag.style.display = 'inline-flex';
       this.filterTag.style.cursor = 'pointer';
     } else {
@@ -169,7 +173,7 @@ export class RisksComponent {
       this.tableBody.innerHTML = `
         <tr>
           <td colspan="6" style="text-align: center; color: var(--text-muted);">
-            ${this.activeFilter ? '该级别网格内无匹配的风险条目。' : '暂无风险记录，请点击右上角新增。'}
+            ${this.activeFilter ? 'No matching risk entries found in this grid cell.' : 'No risks registered. Click upper right to add.'}
           </td>
         </tr>
       `;
@@ -193,17 +197,21 @@ export class RisksComponent {
         ratingClass = 'badge-executing';
         ratingColor = 'var(--status-success)';
       }
+
+      const categoryText = t('risk_cat_' + risk.category.toLowerCase().replace(' ', '')) || risk.category;
+      const strategyText = t('risk_strat_' + risk.strategy.toLowerCase()) || risk.strategy;
+      const statusText = risk.status === 'Active' ? t('risk_status_active') : t('risk_status_closed');
       
       html += `
         <tr>
           <td>
             <div style="font-weight: 600; color: var(--text-primary);">${risk.description}</div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top:2px;">
-              状态: <strong>${risk.status === 'Active' ? '监控中 (Active)' : '已关闭 (Closed)'}</strong>
+              ${t('label_risk_status')}: <strong>${statusText}</strong>
             </div>
           </td>
           <td>
-            <span style="font-size: 13px;">${risk.category}</span>
+            <span style="font-size: 13px;">${categoryText}</span>
           </td>
           <td>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -212,16 +220,16 @@ export class RisksComponent {
             </div>
           </td>
           <td>
-            <span class="badge ${ratingClass}">${calc.rating}</span>
+            <span class="badge ${ratingClass}">${calc.rating === 'High' ? t('risk_level_high') : calc.rating === 'Medium' ? t('risk_level_med') : t('risk_level_low')}</span>
           </td>
           <td>
-            <div style="font-size:13px; color:var(--text-primary);">策略: <strong>${risk.strategy}</strong></div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">责任人: ${risk.owner || '未分配'}</div>
+            <div style="font-size:13px; color:var(--text-primary);">${t('label_risk_strat')}: <strong>${strategyText}</strong></div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${t('label_risk_owner')}: ${risk.owner || '-'}</div>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">编辑</button>
-              <button class="btn btn-danger btn-delete-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">删除</button>
+              <button class="btn btn-secondary btn-edit-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger btn-delete-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -241,64 +249,70 @@ export class RisksComponent {
     this.tableBody.querySelectorAll('.btn-delete-risk').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('确定要删除这条风险登记吗？')) {
+        if (confirm('Are you sure you want to delete this risk log entry?')) {
           store.deleteRisk(id);
-          store.publish('notify', { type: 'success', message: '已从登记册中移除风险。' });
+          store.publish('notify', { type: 'success', message: 'Risk entry deleted successfully.' });
         }
       });
     });
   }
 
   getFormHtml(risk = {}) {
+    const lang = store.state.language || 'en';
+    const isEn = lang !== 'zh';
+    
+    const probLabels = isEn ? { high: 'High', med: 'Med', low: 'Low' } : { high: '高', med: '中', low: '低' };
+    const impactLabels = isEn ? { severe: 'Severe', med: 'Moderate', minor: 'Minor' } : { severe: '极重', med: '中度', minor: '轻微' };
+
     return `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="risk-desc">风险描述 / 危害:</label>
-          <input type="text" id="risk-desc" name="description" class="form-control" value="${risk.description || ''}" placeholder="如：XX设备供应商交货期延误" required>
+          <label for="risk-desc">${t('label_risk_desc')}</label>
+          <input type="text" id="risk-desc" name="description" class="form-control" value="${risk.description || ''}" placeholder="e.g. Delay in sensor vendor shipment" required>
         </div>
         <div class="form-group">
-          <label for="risk-cat">风险分类 (Category):</label>
+          <label for="risk-cat">${t('label_risk_cat')}</label>
           <select id="risk-cat" name="category" class="form-control">
-            <option value="Technical" ${risk.category === 'Technical' ? 'selected' : ''}>技术风险 (Technical) - 如软硬件故障、网络带宽</option>
-            <option value="External" ${risk.category === 'External' ? 'selected' : ''}>外部风险 (External) - 如供应商、法规政策</option>
-            <option value="Organizational" ${risk.category === 'Organizational' ? 'selected' : ''}>组织风险 (Organizational) - 如资金链、人员调动</option>
-            <option value="PM" ${risk.category === 'PM' || !risk.category ? 'selected' : ''}>项目管理风险 (PM) - 如进度编排不当、范围蔓延</option>
+            <option value="Technical" ${risk.category === 'Technical' ? 'selected' : ''}>${t('risk_cat_technical')}</option>
+            <option value="External" ${risk.category === 'External' ? 'selected' : ''}>${t('risk_cat_external')}</option>
+            <option value="Organizational" ${risk.category === 'Organizational' ? 'selected' : ''}>${t('risk_cat_organizational')}</option>
+            <option value="PM" ${risk.category === 'PM' || !risk.category ? 'selected' : ''}>${t('risk_cat_pm')}</option>
           </select>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="risk-prob">发生概率 (Probability, 1-5):</label>
+            <label for="risk-prob">${t('label_risk_prob')}</label>
             <select id="risk-prob" name="probability" class="form-control">
-              ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${Number(risk.probability || 3) === n ? 'selected' : ''}>${n} ${n >= 4 ? '(高)' : n <= 2 ? '(低)' : '(中)'}</option>`).join('')}
+              ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${Number(risk.probability || 3) === n ? 'selected' : ''}>${n} ${n >= 4 ? `(${probLabels.high})` : n <= 2 ? `(${probLabels.low})` : `(${probLabels.med})`}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
-            <label for="risk-imp">影响程度 (Impact, 1-5):</label>
+            <label for="risk-imp">${t('label_risk_impact')}</label>
             <select id="risk-imp" name="impact" class="form-control">
-              ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${Number(risk.impact || 3) === n ? 'selected' : ''}>${n} ${n >= 4 ? '(极重)' : n <= 2 ? '(轻微)' : '(中度)'}</option>`).join('')}
+              ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${Number(risk.impact || 3) === n ? 'selected' : ''}>${n} ${n >= 4 ? `(${impactLabels.severe})` : n <= 2 ? `(${impactLabels.minor})` : `(${impactLabels.med})`}</option>`).join('')}
             </select>
           </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
-            <label for="risk-strat">应对策略 (Strategy):</label>
+            <label for="risk-strat">${t('label_risk_strat')}</label>
             <select id="risk-strat" name="strategy" class="form-control">
-              <option value="Avoid" ${risk.strategy === 'Avoid' ? 'selected' : ''}>规避 (Avoid) - 改变计划消除威胁</option>
-              <option value="Mitigate" ${risk.strategy === 'Mitigate' || !risk.strategy ? 'selected' : ''}>减轻 (Mitigate) - 降低概率或影响</option>
-              <option value="Transfer" ${risk.strategy === 'Transfer' ? 'selected' : ''}>转移 (Transfer) - 买保险/外包出包</option>
-              <option value="Accept" ${risk.strategy === 'Accept' ? 'selected' : ''}>接受 (Accept) - 不做改变，建立应急储备</option>
+              <option value="Avoid" ${risk.strategy === 'Avoid' ? 'selected' : ''}>${t('risk_strat_avoid')}</option>
+              <option value="Mitigate" ${risk.strategy === 'Mitigate' || !risk.strategy ? 'selected' : ''}>${t('risk_strat_mitigate')}</option>
+              <option value="Transfer" ${risk.strategy === 'Transfer' ? 'selected' : ''}>${t('risk_strat_transfer')}</option>
+              <option value="Accept" ${risk.strategy === 'Accept' ? 'selected' : ''}>${t('risk_strat_accept')}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="risk-owner">责任承担人 (Owner):</label>
-            <input type="text" id="risk-owner" name="owner" class="form-control" value="${risk.owner || ''}" placeholder="如：李项目经理" required>
+            <label for="risk-owner">${t('label_risk_owner')}</label>
+            <input type="text" id="risk-owner" name="owner" class="form-control" value="${risk.owner || ''}" placeholder="e.g. John Doe" required>
           </div>
         </div>
         <div class="form-group">
-          <label for="risk-status">状态:</label>
+          <label for="risk-status">${t('label_risk_status')}</label>
           <select id="risk-status" name="status" class="form-control">
-            <option value="Active" ${risk.status === 'Active' || !risk.status ? 'selected' : ''}>监控激活中 (Active)</option>
-            <option value="Closed" ${risk.status === 'Closed' ? 'selected' : ''}>已关闭解决 (Closed)</option>
+            <option value="Active" ${risk.status === 'Active' || !risk.status ? 'selected' : ''}>${t('risk_status_active')}</option>
+            <option value="Closed" ${risk.status === 'Closed' ? 'selected' : ''}>${t('risk_status_closed')}</option>
           </select>
         </div>
       </div>
@@ -307,11 +321,11 @@ export class RisksComponent {
 
   openAddModal() {
     ModalHelper.open(
-      '新增项目风险登记',
+      t('modal_risk_add'),
       this.getFormHtml(),
       (data) => {
         store.addRisk(data);
-        store.publish('notify', { type: 'success', message: '已成功登记新风险项。' });
+        store.publish('notify', { type: 'success', message: 'Risk added successfully.' });
         return true;
       }
     );
@@ -319,11 +333,11 @@ export class RisksComponent {
 
   openEditModal(risk) {
     ModalHelper.open(
-      `编辑风险评估: ${risk.description}`,
+      `${t('modal_risk_edit')}: ${risk.description}`,
       this.getFormHtml(risk),
       (data) => {
         store.updateRisk(risk.id, data);
-        store.publish('notify', { type: 'success', message: '风险评估已更新。' });
+        store.publish('notify', { type: 'success', message: 'Risk analysis updated.' });
         return true;
       }
     );

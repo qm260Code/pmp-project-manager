@@ -129,10 +129,74 @@ textarea.form-control {
 /* Table styling */
 .custom-table-container {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 520px; /* Enforce table scroll height limit */
   margin-top: 16px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+}
+
+/* Tooltip container */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  vertical-align: middle;
+  transition: color 0.2s;
+}
+.tooltip-container:hover {
+  color: var(--accent-primary);
+}
+.tooltip-container .info-icon {
+  stroke: var(--text-muted);
+  transition: stroke 0.2s;
+}
+.tooltip-container:hover .info-icon {
+  stroke: var(--accent-primary);
+}
+.tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #111827;
+  color: #ffffff;
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: normal; /* Allow wrapping for long tooltip texts */
+  width: 220px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: normal;
+}
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, -4px);
+}
+/* Tooltip arrow */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #111827 transparent transparent transparent;
 }
 .custom-table {
   width: 100%;

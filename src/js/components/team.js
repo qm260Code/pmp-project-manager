@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { ModalHelper } from '../app.js';
+import { t } from '../utils/i18n.js';
 
 export class TeamComponent {
   constructor(container) {
@@ -35,13 +36,12 @@ export class TeamComponent {
       this.canvas.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; color: var(--text-muted); text-align: center; padding: 40px 0;">
           <span style="font-size: 48px; margin-bottom: 10px;">👥</span>
-          <p style="margin: 0; font-size: 14px;">暂无团队组织架构数据，请点击右侧新增成员。</p>
+          <p style="margin: 0; font-size: 14px;">No team structure data found. Please add members on the right.</p>
         </div>
       `;
       return;
     }
 
-    // Build adjacency list for graph traversal
     const memberMap = {};
     const adjList = {};
     team.forEach(m => {
@@ -58,7 +58,6 @@ export class TeamComponent {
       }
     });
 
-    // Handle virtual root node to compute layout coordinates for multiple roots
     const virtualRoot = '__virtual_root__';
     adjList[virtualRoot] = roots;
 
@@ -66,7 +65,6 @@ export class TeamComponent {
     const depthMap = {};
     let leafCount = 0;
 
-    // Depth-First search to map horizontal slots & vertical depths
     const traverse = (nodeId, depth) => {
       depthMap[nodeId] = depth;
       const children = adjList[nodeId] || [];
@@ -83,28 +81,24 @@ export class TeamComponent {
 
     traverse(virtualRoot, 0);
 
-    // Layout Dimension Constants
     const cardWidth = 140;
     const cardHeight = 65;
-    const hSpacing = 175; // Card width + gap
-    const vSpacing = 110; // Vertical layer distance
+    const hSpacing = 175; 
+    const vSpacing = 110; 
     const paddingX = 30;
     const paddingY = 30;
 
-    // Find maximum depth (offset by 1 due to virtual root)
     let maxDepth = 0;
     team.forEach(m => {
       const d = depthMap[m.id] - 1;
       if (d > maxDepth) maxDepth = d;
     });
 
-    // Width & Height of target SVG canvas
     const svgWidth = Math.max(leafCount * hSpacing - (hSpacing - cardWidth) + paddingX * 2, 500);
     const svgHeight = (maxDepth * vSpacing) + cardHeight + paddingY * 2;
 
     let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="overflow: visible; display: block; margin: 0 auto;">`;
 
-    // 1. Draw Orthogonal Connection Lines
     team.forEach(m => {
       if (m.reportsTo && memberMap[m.reportsTo]) {
         const parentId = m.reportsTo;
@@ -117,15 +111,12 @@ export class TeamComponent {
         const childX = paddingX + xCoords[m.id] * hSpacing;
         const childY = paddingY + childDepth * vSpacing;
         
-        // Parent card bottom center anchor point
         const x1 = parentX + cardWidth / 2;
         const y1 = parentY + cardHeight;
         
-        // Child card top center anchor point
         const x2 = childX + cardWidth / 2;
         const y2 = childY;
         
-        // Median vertical split point
         const midY = (y1 + y2) / 2;
         
         svgContent += `
@@ -138,37 +129,30 @@ export class TeamComponent {
       }
     });
 
-    // 2. Draw Cards
     team.forEach(m => {
       const depth = depthMap[m.id] - 1;
       const x = paddingX + xCoords[m.id] * hSpacing;
       const y = paddingY + depth * vSpacing;
       
-      // Theme colors depending on roles
       let borderStroke = 'var(--border-color)';
       let cardBg = '#ffffff';
       if (!m.reportsTo || !memberMap[m.reportsTo]) {
-        borderStroke = '#E20015'; // Root node / Sponsor / PM
+        borderStroke = '#E20015'; 
       } else if (m.role.includes('Lead') || m.role.includes('负责人')) {
         borderStroke = 'var(--status-info)';
       }
 
       svgContent += `
-        <g class="org-card" transform="translate(${x}, ${y})" style="cursor: pointer;" data-id="${m.id}" title="点击编辑成员">
-          <!-- Glassmorphic Rect Card -->
+        <g class="org-card" transform="translate(${x}, ${y})" style="cursor: pointer;" data-id="${m.id}" title="Click to edit member">
           <rect width="${cardWidth}" height="${cardHeight}" rx="8" 
                 fill="${cardBg}" 
                 stroke="${borderStroke}" 
                 stroke-width="1.5" 
                 filter="drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08))" />
           
-          <!-- Name -->
           <text x="14" y="22" fill="var(--text-primary)" font-size="12.5" font-weight="600" font-family="'Outfit', sans-serif">${this.escapeHTML(m.name)}</text>
-          
-          <!-- Role Description -->
           <text x="14" y="38" fill="var(--text-secondary)" font-size="9.5" font-family="sans-serif">${this.escapeHTML(m.role)}</text>
           
-          <!-- Department Badge -->
           <rect x="14" y="46" width="${this.estimateTextWidth(m.department)}" height="13" rx="3" fill="rgba(0, 0, 0, 0.04)" />
           <text x="18" y="55" fill="var(--text-muted)" font-size="8.5" font-family="sans-serif" font-weight="500">${this.escapeHTML(m.department)}</text>
         </g>
@@ -178,7 +162,6 @@ export class TeamComponent {
     svgContent += `</svg>`;
     this.canvas.innerHTML = svgContent;
 
-    // Attach click events on nodes
     this.canvas.querySelectorAll('.org-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-id');
@@ -195,7 +178,7 @@ export class TeamComponent {
       this.tableBody.innerHTML = `
         <tr>
           <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px 0;">
-            暂无团队成员明细。
+            No team details registered.
           </td>
         </tr>
       `;
@@ -208,7 +191,7 @@ export class TeamComponent {
     let html = '';
     team.forEach(m => {
       const parent = m.reportsTo ? memberMap[m.reportsTo] : null;
-      const supervisorName = parent ? parent.name : '<span style="color:var(--text-muted);">无 (直接汇报)</span>';
+      const supervisorName = parent ? parent.name : `<span style="color:var(--text-muted);">${t('team_reports_none')}</span>`;
       
       html += `
         <tr>
@@ -224,8 +207,8 @@ export class TeamComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">编辑</button>
-              <button class="btn btn-danger btn-delete-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">删除</button>
+              <button class="btn btn-secondary btn-edit-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger btn-delete-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -233,7 +216,6 @@ export class TeamComponent {
     });
     this.tableBody.innerHTML = html;
 
-    // Bind edit/delete handlers
     this.tableBody.querySelectorAll('.btn-edit-team').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
@@ -245,36 +227,35 @@ export class TeamComponent {
     this.tableBody.querySelectorAll('.btn-delete-team').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('确定要删除这位项目成员吗？')) {
+        if (confirm('Are you sure you want to remove this team member?')) {
           store.deleteTeamMember(id);
-          store.publish('notify', { type: 'success', message: '已移除该团队成员。' });
+          store.publish('notify', { type: 'success', message: 'Team member removed.' });
         }
       });
     });
   }
 
   getFormHtml(m = null, team = []) {
-    // Exclude current member and all descendants to prevent loop reporting structures
     const possibleSupervisors = this.getPossibleSupervisors(m ? m.id : null, team);
     
     return `
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
-          <label for="member-name">成员姓名:</label>
-          <input type="text" id="member-name" name="name" class="form-control" value="${m ? m.name : ''}" placeholder="如：李小明" required>
+          <label for="member-name">${t('label_member_name')}</label>
+          <input type="text" id="member-name" name="name" class="form-control" value="${m ? m.name : ''}" placeholder="e.g. John Doe" required>
         </div>
         <div class="form-group">
-          <label for="member-role">项目职责 / 岗位:</label>
-          <input type="text" id="member-role" name="role" class="form-control" value="${m ? m.role : ''}" placeholder="如：高级后端开发、测试工程师" required>
+          <label for="member-role">${t('label_member_role')}</label>
+          <input type="text" id="member-role" name="role" class="form-control" value="${m ? m.role : ''}" placeholder="e.g. Technical Lead" required>
         </div>
         <div class="form-group">
-          <label for="member-department">所属部门:</label>
-          <input type="text" id="member-department" name="department" class="form-control" value="${m ? m.department : ''}" placeholder="如：软件开发部、供应链部" required>
+          <label for="member-department">${t('label_member_dept')}</label>
+          <input type="text" id="member-department" name="department" class="form-control" value="${m ? m.department : ''}" placeholder="e.g. R&D Department" required>
         </div>
         <div class="form-group">
-          <label for="member-reports-to">直接汇报上级 (Reports To):</label>
+          <label for="member-reports-to">${t('label_member_reports')}</label>
           <select id="member-reports-to" name="reportsTo" class="form-control">
-            <option value="" ${!m || !m.reportsTo ? 'selected' : ''}>无 (直属最高层/独立汇报)</option>
+            <option value="" ${!m || !m.reportsTo ? 'selected' : ''}>${t('team_reports_none')}</option>
             ${possibleSupervisors.map(s => 
               `<option value="${s.id}" ${m && m.reportsTo === s.id ? 'selected' : ''}>${this.escapeHTML(s.name)} (${this.escapeHTML(s.role)})</option>`
             ).join('')}
@@ -306,11 +287,11 @@ export class TeamComponent {
   openAddModal() {
     const team = store.state.team || [];
     ModalHelper.open(
-      '新增团队成员',
+      t('modal_member_add'),
       this.getFormHtml(null, team),
       (data) => {
         store.addTeamMember(data);
-        store.publish('notify', { type: 'success', message: '已成功添加团队成员。' });
+        store.publish('notify', { type: 'success', message: 'Team member added successfully.' });
         return true;
       }
     );
@@ -319,11 +300,11 @@ export class TeamComponent {
   openEditModal(m) {
     const team = store.state.team || [];
     ModalHelper.open(
-      `编辑成员: ${m.name}`,
+      `${t('modal_member_edit')}: ${m.name}`,
       this.getFormHtml(m, team),
       (data) => {
         store.updateTeamMember(m.id, data);
-        store.publish('notify', { type: 'success', message: '成员信息已更新。' });
+        store.publish('notify', { type: 'success', message: 'Member info updated.' });
         return true;
       }
     );

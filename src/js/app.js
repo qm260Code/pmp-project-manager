@@ -15,6 +15,9 @@ import { ChangeRequestsComponent } from './components/changeRequests.js';
 import { RequirementsComponent } from './components/requirements.js';
 import { ExportComponent } from './components/export.js';
 
+// Import i18n helper
+import { t, translations } from './utils/i18n.js';
+
 class PmpApp {
   constructor() {
     this.toastTimer = null;
@@ -29,11 +32,12 @@ class PmpApp {
     // Boot views components
     this.bootComponents();
     
-    // Force initial render of headers
+    // Force initial render of i18n DOM and headers
+    this.translateDOM(store.state);
     this.updateHeaderUI(store.state);
     
     // Show welcome notification
-    this.notify({ type: 'success', message: 'PMP 项目管理系统已成功加载，可实时在本地更新。' });
+    this.notify({ type: 'success', message: t('msg_welcome') });
   }
 
   initElements() {
@@ -49,6 +53,7 @@ class PmpApp {
     this.btnEditProjectInfo = document.getElementById('btn-edit-project-info');
     this.btnAddProject = document.getElementById('btn-add-new-project');
     this.btnDeleteProject = document.getElementById('btn-delete-current-project');
+    this.languageSelector = document.getElementById('language-selector');
   }
 
   initRouter() {
@@ -76,16 +81,23 @@ class PmpApp {
       { view: 'export', emoji: '📥' }
     ];
 
+    // Translation fallbacks for sidebar titles
+    const defaultTitlesEn = ["Dashboard", "Process Area Matrix", "Stakeholder Register", "Risk Register", "Schedule & Gantt", "Cost & EVM", "RACI Matrix", "Team Structure", "Action Items Tracker", "Change Requests Log", "Requirements Matrix (RTM)", "Export & Report"];
+    const defaultTitlesZh = ["项目总览", "过程矩阵", "相关方登记册 (10.1)", "风险登记册 (11.2)", "进度里程碑与甘特图", "成本挣值分析 (EVM)", "责任分配矩阵 (RACI)", "团队组织架构", "项目待完成事项", "项目变更管理", "客户需求管理", "数据导出与分析报告"];
+
     let html = '';
     itemsConfig.forEach(item => {
-      const title = sidebarTitles[item.view] || item.view;
+      let title = sidebarTitles[item.view];
+      if (!title || defaultTitlesEn.includes(title) || defaultTitlesZh.includes(title)) {
+        title = t('nav_' + item.view);
+      }
       const isActive = item.view === activeTab;
       
       html += `
         <li class="sidebar-item">
           <a class="sidebar-link ${isActive ? 'active' : ''}" 
              data-view="${item.view}" 
-             title="单点切换，双击重命名">
+             title="Single click to switch, double click to rename">
             <span>${item.emoji}</span>
             <span class="sidebar-link-text">${title}</span>
           </a>
@@ -161,6 +173,14 @@ class PmpApp {
   }
 
   initGlobalActions() {
+    // Language switching
+    if (this.languageSelector) {
+      this.languageSelector.addEventListener('change', (e) => {
+        const newLang = e.target.value;
+        store.changeLanguage(newLang);
+      });
+    }
+
     // Project switching dropdown
     this.projectSelector.addEventListener('change', (e) => {
       const newId = e.target.value;
@@ -170,60 +190,68 @@ class PmpApp {
     // Click to edit active project details
     this.btnEditProjectInfo.addEventListener('click', () => {
       const projectInfo = store.state.projectInfo;
+      const lang = store.state.language || 'en';
+      const isEn = lang !== 'zh';
+
+      const optInitiating = isEn ? 'Initiating Phase' : '启动阶段 (Initiating)';
+      const optPlanning = isEn ? 'Planning Phase' : '规划阶段 (Planning)';
+      const optExecuting = isEn ? 'In Progress' : '执行进行中 (In Progress)';
+      const optClosed = isEn ? 'Closed / Finished' : '收尾结束 (Closed)';
+
       const bodyHtml = `
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div class="form-group">
-            <label for="project-info-name">项目名称 (Project Name):</label>
-            <input type="text" id="project-info-name" name="name" class="form-control" value="${projectInfo.name || ''}" placeholder="输入项目名称" required>
+            <label for="project-info-name">${t('label_project_name')}</label>
+            <input type="text" id="project-info-name" name="name" class="form-control" value="${projectInfo.name || ''}" placeholder="${t('placeholder_project_name')}" required>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group">
-              <label for="project-info-manager">项目经理 (Project Manager):</label>
+              <label for="project-info-manager">${t('label_project_manager')}</label>
               <input type="text" id="project-info-manager" name="manager" class="form-control" value="${projectInfo.manager || ''}" required>
             </div>
             <div class="form-group">
-              <label for="project-info-sponsor">项目发起人 (Sponsor):</label>
+              <label for="project-info-sponsor">${t('label_project_sponsor')}</label>
               <input type="text" id="project-info-sponsor" name="sponsor" class="form-control" value="${projectInfo.sponsor || ''}" required>
             </div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group">
-              <label for="project-info-status">项目生命周期状态:</label>
+              <label for="project-info-status">${t('label_project_status')}</label>
               <select id="project-info-status" name="status" class="form-control">
-                <option value="Initiating" ${projectInfo.status === 'Initiating' ? 'selected' : ''}>启动阶段 (Initiating)</option>
-                <option value="Planning" ${projectInfo.status === 'Planning' ? 'selected' : ''}>规划阶段 (Planning)</option>
-                <option value="In Progress" ${projectInfo.status === 'In Progress' || projectInfo.status === 'Executing' ? 'selected' : ''}>执行进行中 (In Progress)</option>
-                <option value="Closed" ${projectInfo.status === 'Closed' ? 'selected' : ''}>收尾结束 (Closed)</option>
+                <option value="Initiating" ${projectInfo.status === 'Initiating' ? 'selected' : ''}>${optInitiating}</option>
+                <option value="Planning" ${projectInfo.status === 'Planning' ? 'selected' : ''}>${optPlanning}</option>
+                <option value="In Progress" ${projectInfo.status === 'In Progress' || projectInfo.status === 'Executing' ? 'selected' : ''}>${optExecuting}</option>
+                <option value="Closed" ${projectInfo.status === 'Closed' ? 'selected' : ''}>${optClosed}</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="project-info-budget">批准总预算 (BAC, 元):</label>
+              <label for="project-info-budget">${t('label_project_budget')}</label>
               <input type="number" id="project-info-budget" name="budget" min="0" class="form-control" value="${projectInfo.budget || 0}" required>
             </div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group">
-              <label for="project-info-start">计划开始日期:</label>
+              <label for="project-info-start">${t('label_project_start_date')}</label>
               <input type="date" id="project-info-start" name="startDate" class="form-control" value="${projectInfo.startDate || ''}" required>
             </div>
             <div class="form-group">
-              <label for="project-info-end">计划完工日期:</label>
+              <label for="project-info-end">${t('label_project_end_date')}</label>
               <input type="date" id="project-info-end" name="endDate" class="form-control" value="${projectInfo.endDate || ''}" required>
             </div>
           </div>
           <div class="form-group">
-            <label for="project-info-desc">商业目的及项目背景描述:</label>
-            <textarea id="project-info-desc" name="description" class="form-control" style="height:80px;" placeholder="录入项目的商业论证与简要描述..." required>${projectInfo.description || ''}</textarea>
+            <label for="project-info-desc">${t('label_project_description')}</label>
+            <textarea id="project-info-desc" name="description" class="form-control" style="height:80px;" placeholder="${t('placeholder_project_desc')}" required>${projectInfo.description || ''}</textarea>
           </div>
         </div>
       `;
 
       ModalHelper.open(
-        '编辑项目基本概要信息',
+        t('modal_project_properties_title'),
         bodyHtml,
         (data) => {
           if (new Date(data.startDate) > new Date(data.endDate)) {
-            this.notify({ type: 'error', message: '日期配置错误：开始日期不能晚于完工日期。' });
+            this.notify({ type: 'error', message: t('msg_date_error') });
             return false;
           }
           store.updateProjectInfo({
@@ -236,7 +264,7 @@ class PmpApp {
             endDate: data.endDate,
             description: data.description
           });
-          this.notify({ type: 'success', message: '项目主信息更新完成，已广播重绘所有视图。' });
+          this.notify({ type: 'success', message: t('msg_project_info_updated') });
           return true;
         }
       );
@@ -246,20 +274,21 @@ class PmpApp {
     this.btnAddProject.addEventListener('click', () => {
       const bodyHtml = `
         <div class="form-group">
-          <label for="new-project-name">新项目名称:</label>
-          <input type="text" id="new-project-name" name="name" class="form-control" placeholder="如：CNHTC 第二代系统标定项目" required>
+          <label for="new-project-name">${t('label_new_project_name')}</label>
+          <input type="text" id="new-project-name" name="name" class="form-control" placeholder="${t('placeholder_new_project_name')}" required>
         </div>
       `;
       ModalHelper.open(
-        '创建全新项目',
+        t('modal_new_project_title'),
         bodyHtml,
         (data) => {
           const name = data.name ? data.name.trim() : '';
           if (!name) {
-            this.notify({ type: 'error', message: '项目名称不能为空！' });
+            this.notify({ type: 'error', message: t('msg_input_empty') });
             return false;
           }
           store.createNewProject(name);
+          this.notify({ type: 'success', message: t('msg_new_project_created') + name });
           return true;
         }
       );
@@ -268,25 +297,28 @@ class PmpApp {
     // Delete current active project
     this.btnDeleteProject.addEventListener('click', () => {
       const activeProjectName = store.state.projectInfo.name;
-      if (confirm(`⚠️ 警告：您确定要彻底删除当前项目【${activeProjectName}】吗？\n此操作将清空该项目的所有 WBS、费用、风险、相关方、变更及需求数据，且无法恢复！`)) {
+      if (confirm(t('msg_confirm_delete_project') || `Warning: Are you sure you want to permanently delete this project?`)) {
         store.deleteProject(store.state.currentProjectId);
+        this.notify({ type: 'success', message: t('msg_project_deleted') });
       }
     });
 
     // Reset back to template
     this.btnReset.addEventListener('click', () => {
-      if (confirm('确定要清除所有修改，重置为系统默认项目模板数据吗？此操作无法撤销。')) {
+      if (confirm(t('msg_confirm_reset_template') || 'Are you sure you want to restore baseline template?')) {
         store.resetToDefault();
+        this.notify({ type: 'success', message: 'Restored baseline project templates.' });
       }
     });
 
     // Rollback last transaction
     this.btnRollback.addEventListener('click', () => {
       if (store.history.length === 0) {
-        this.notify({ type: 'warning', message: '没有更早的历史修改记录。' });
+        this.notify({ type: 'warning', message: t('msg_no_older_history') });
         return;
       }
       store.rollback();
+      this.notify({ type: 'success', message: t('msg_rollback_success') });
     });
   }
 
@@ -296,6 +328,7 @@ class PmpApp {
     
     // Watch global state updates for header and sidebar titles
     store.subscribe('state-updated', (state) => {
+      this.translateDOM(state);
       this.updateHeaderUI(state);
       this.renderSidebarMenu();
     });
@@ -381,6 +414,27 @@ class PmpApp {
     this.toastTimer = setTimeout(() => {
       this.toastBanner.classList.remove('show');
     }, 4500);
+  }
+
+  translateDOM(state) {
+    const lang = state.language || 'en';
+    
+    if (this.languageSelector) {
+      this.languageSelector.value = lang;
+    }
+    
+    const elements = document.querySelectorAll('[data-i18n]');
+    elements.forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const text = translations[lang] && translations[lang][key];
+      if (text) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = text;
+        } else {
+          el.innerHTML = text;
+        }
+      }
+    });
   }
 }
 
