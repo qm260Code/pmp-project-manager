@@ -16,7 +16,7 @@ import { RequirementsComponent } from './components/requirements.js';
 import { ExportComponent } from './components/export.js';
 
 // Import i18n helper
-import { t, translations } from './utils/i18n.js';
+import { t, translations, repairText } from './utils/i18n.js';
 
 class PmpApp {
   constructor() {
@@ -82,7 +82,7 @@ class PmpApp {
     ];
 
     // Translation fallbacks for sidebar titles
-    const defaultTitlesEn = ["Dashboard", "Process Area Matrix", "Stakeholder Register", "Risk Register", "Schedule & Gantt", "Cost & EVM", "RACI Matrix", "Team Structure", "Action Items Tracker", "Change Requests Log", "Requirements Matrix (RTM)", "Export & Report"];
+    const defaultTitlesEn = ["Dashboard", "Project Dashboard", "Process Area Matrix", "Stakeholder Register", "Risk Register", "Schedule & Gantt", "Cost & EVM", "RACI Matrix", "Team Structure", "Action Items Tracker", "Change Requests Log", "Requirements Matrix (RTM)", "Export & Report", "Export & Reports"];
     const defaultTitlesZh = ["项目总览", "过程矩阵", "相关方登记册 (10.1)", "风险登记册 (11.2)", "进度里程碑与甘特图", "成本挣值分析 (EVM)", "责任分配矩阵 (RACI)", "团队组织架构", "项目待完成事项", "项目变更管理", "客户需求管理", "数据导出与分析报告"];
 
     let html = '';
@@ -98,8 +98,8 @@ class PmpApp {
           <a class="sidebar-link ${isActive ? 'active' : ''}" 
              data-view="${item.view}" 
              title="Single click to switch, double click to rename">
-            <span>${item.emoji}</span>
-            <span class="sidebar-link-text">${title}</span>
+            <span>${repairText(item.emoji)}</span>
+            <span class="sidebar-link-text">${repairText(title)}</span>
           </a>
         </li>
       `;
@@ -296,8 +296,7 @@ class PmpApp {
 
     // Delete current active project
     this.btnDeleteProject.addEventListener('click', () => {
-      const activeProjectName = store.state.projectInfo.name;
-      if (confirm(t('msg_confirm_delete_project') || `Warning: Are you sure you want to permanently delete this project?`)) {
+      if (confirm(t('msg_confirm_delete_project'))) {
         store.deleteProject(store.state.currentProjectId);
         this.notify({ type: 'success', message: t('msg_project_deleted') });
       }
@@ -305,7 +304,7 @@ class PmpApp {
 
     // Reset back to template
     this.btnReset.addEventListener('click', () => {
-      if (confirm(t('msg_confirm_reset_template') || 'Are you sure you want to restore baseline template?')) {
+      if (confirm(t('msg_confirm_reset_template'))) {
         store.resetToDefault();
         this.notify({ type: 'success', message: 'Restored baseline project templates.' });
       }
@@ -325,12 +324,24 @@ class PmpApp {
   initStoreSubscriptions() {
     // Watch store notifications
     store.subscribe('notify', (data) => this.notify(data));
-    
+
     // Watch global state updates for header and sidebar titles
+    // Track language and sidebarTitles to avoid rebuilding the sidebar on every data change
+    let _lastLang = null;
+    let _lastSidebarTitlesJson = null;
+
     store.subscribe('state-updated', (state) => {
       this.translateDOM(state);
       this.updateHeaderUI(state);
-      this.renderSidebarMenu();
+
+      // Only re-render sidebar if language or custom titles actually changed
+      const currentLang = state.language || 'en';
+      const currentSidebarJson = JSON.stringify(state.sidebarTitles || {});
+      if (currentLang !== _lastLang || currentSidebarJson !== _lastSidebarTitlesJson) {
+        _lastLang = currentLang;
+        _lastSidebarTitlesJson = currentSidebarJson;
+        this.renderSidebarMenu();
+      }
     });
   }
 
@@ -359,14 +370,14 @@ class PmpApp {
       let optionsHtml = '';
       state.projectsList.forEach(proj => {
         const isSelected = proj.id === state.currentProjectId ? 'selected' : '';
-        const name = proj.projectInfo ? proj.projectInfo.name : '未命名项目';
+        const name = repairText(proj.projectInfo ? proj.projectInfo.name : 'Unnamed Project');
         optionsHtml += `<option value="${proj.id}" ${isSelected}>${name}</option>`;
       });
       this.projectSelector.innerHTML = optionsHtml;
     }
     
     // Update Status Badge
-    this.projectStatusDisplay.textContent = (status || 'PLANNING').toUpperCase();
+    this.projectStatusDisplay.textContent = repairText(status || 'PLANNING').toUpperCase();
     
     // Status color mapping
     this.projectStatusDisplay.className = 'badge';
@@ -406,7 +417,7 @@ class PmpApp {
     else if (type === 'error') icon = '❌';
 
     this.toastIcon.textContent = icon;
-    this.toastText.textContent = message;
+    this.toastText.textContent = repairText(message);
     
     this.toastBanner.className = 'toast-notification show';
     this.toastBanner.classList.add(type);
@@ -428,10 +439,11 @@ class PmpApp {
       const key = el.getAttribute('data-i18n');
       const text = translations[lang] && translations[lang][key];
       if (text) {
+        const repairedText = repairText(text);
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-          el.placeholder = text;
+          el.placeholder = repairedText;
         } else {
-          el.innerHTML = text;
+          el.innerHTML = repairedText;
         }
       }
     });
@@ -440,15 +452,15 @@ class PmpApp {
 
 // Global modal helper utility for components to render editing dialogs
 export const ModalHelper = {
-  open(title, bodyHtml, onSubmit, submitText = '保存') {
+  open(title, bodyHtml, onSubmit, submitText = t('btn_save')) {
     const overlay = document.getElementById('global-modal-overlay');
     const titleEl = document.getElementById('modal-title');
     const contentEl = document.getElementById('modal-body-content');
     const submitEl = document.getElementById('btn-submit-modal');
     
-    titleEl.textContent = title;
+    titleEl.textContent = repairText(title);
     contentEl.innerHTML = bodyHtml;
-    submitEl.textContent = submitText;
+    submitEl.textContent = repairText(submitText);
     
     // Event cleanup wrapper
     const form = document.getElementById('modal-form');

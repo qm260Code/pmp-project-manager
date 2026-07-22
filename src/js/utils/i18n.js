@@ -80,6 +80,7 @@ export const translations = {
     kpi_spi_desc_delay: "Behind schedule",
     kpi_spi_desc_ahead: "Ahead of schedule",
     kpi_risks: "Risks Status",
+    kpi_risks_total: "total",
     kpi_risks_desc_severe: "Severe Risks: ",
     kpi_progress: "Overall Progress",
     kpi_progress_desc_nodes: " total task nodes",
@@ -166,6 +167,9 @@ export const translations = {
     risk_status_active: "Active",
     risk_status_monitored: "Monitored",
     risk_status_closed: "Closed",
+    risk_level_high: "High",
+    risk_level_med: "Medium",
+    risk_level_low: "Low",
 
     // Schedule
     btn_add_task: "+ Add Activity",
@@ -326,6 +330,9 @@ export const translations = {
     msg_welcome: "PMP Project Control Center successfully loaded.",
     msg_confirm_delete_project: "⚠️ Warning: Are you sure you want to permanently delete the current project? This will wipe all tasks, stakeholders, costs, and risk items, and cannot be undone!",
     msg_confirm_reset_template: "Are you sure you want to clear all updates and restore the baseline project template? This action cannot be undone.",
+    msg_confirm_delete_item: "Are you sure you want to delete this item? This action cannot be undone.",
+    msg_confirm_delete_task: "Are you sure you want to delete this task? This will break any dependency lines referencing it.",
+    msg_confirm_delete_risk: "Are you sure you want to delete this risk log entry?",
     msg_no_older_history: "No older history backup found to rollback.",
     msg_rollback_success: "Successfully rolled back state to previous transaction.",
     msg_project_info_updated: "Project master info updated successfully.",
@@ -426,6 +433,7 @@ export const translations = {
     kpi_spi_desc_delay: "进度滞后",
     kpi_spi_desc_ahead: "进度提前",
     kpi_risks: "风险状态 (Risks)",
+    kpi_risks_total: "总数",
     kpi_risks_desc_severe: "严重风险：",
     kpi_progress: "项目总体进度",
     kpi_progress_desc_nodes: " 个任务节点",
@@ -512,6 +520,9 @@ export const translations = {
     risk_status_active: "活动中 (Active)",
     risk_status_monitored: "监控中 (Monitored)",
     risk_status_closed: "已关闭 (Closed)",
+    risk_level_high: "高",
+    risk_level_med: "中",
+    risk_level_low: "低",
 
     // Schedule
     btn_add_task: "+ 新增里程碑/活动",
@@ -672,6 +683,9 @@ export const translations = {
     msg_welcome: "PMP 项目管理系统已成功加载，可实时在本地更新。",
     msg_confirm_delete_project: "⚠️ 警告：您确定要彻底删除当前项目吗？此操作将清空该项目的所有 WBS、费用、风险、相关方、变更及需求数据，且无法恢复！",
     msg_confirm_reset_template: "确定要清除所有修改，重置为系统默认项目模板数据吗？此操作无法撤销。",
+    msg_confirm_delete_item: "确定要删除该条目吗？此操作无法撤销。",
+    msg_confirm_delete_task: "确定要删除该任务吗？删除后所有引用该任务 ID 的依赖关系将失效。",
+    msg_confirm_delete_risk: "确定要删除该风险记录吗？",
     msg_no_older_history: "没有更早的历史修改记录。",
     msg_rollback_success: "已成功回滚到上一次的历史备份。",
     msg_project_info_updated: "项目主信息更新完成，已广播重绘所有视图。",
@@ -693,9 +707,46 @@ export const translations = {
   }
 };
 
+const cp1252Overrides = {
+  0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84,
+  0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88,
+  0x2030: 0x89, 0x0160: 0x8a, 0x2039: 0x8b, 0x0152: 0x8c,
+  0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92, 0x201c: 0x93,
+  0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+  0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b,
+  0x0153: 0x9c, 0x017e: 0x9e, 0x0178: 0x9f
+};
+
+function cp1252Bytes(text) {
+  const bytes = [];
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    if (code <= 0xff) {
+      bytes.push(code);
+    } else if (cp1252Overrides[code]) {
+      bytes.push(cp1252Overrides[code]);
+    } else {
+      return null;
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+export function repairText(text) {
+  if (typeof text !== 'string') return text;
+  if (!/[ÃÂâäåæçèéêëìíîïðñòóôöùúûüýĀ-ž]/.test(text)) return text;
+  const bytes = cp1252Bytes(text);
+  if (!bytes) return text;
+
+  const repaired = new TextDecoder('utf-8').decode(bytes);
+  const badBefore = (text.match(/[ÃÂâäåæçèéêëìíîïðñòóôöùúûüýĀ-ž]/g) || []).length;
+  const badAfter = (repaired.match(/[ÃÂâäåæçèéêëìíîïðñòóôöùúûüýĀ-ž]/g) || []).length;
+  return badAfter < badBefore ? repaired : text;
+}
+
 export function t(key) {
   const lang = (window.pmpStore && window.pmpStore.state && window.pmpStore.state.language) || 'en';
-  return (translations[lang] && translations[lang][key]) || key;
+  return repairText((translations[lang] && translations[lang][key]) || key);
 }
 
 export default t;

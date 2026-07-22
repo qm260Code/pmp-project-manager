@@ -10,13 +10,19 @@ export class RisksComponent {
     this.tableBody = document.getElementById('risk-table-body');
     this.btnAdd = document.getElementById('btn-add-risk');
     this.filterTag = document.getElementById('risk-filter-tag');
-    
+    if (!this.filterTag && this.container) {
+      this.filterTag = document.createElement('span');
+      this.filterTag.id = 'risk-filter-tag';
+      this.filterTag.className = 'filter-tag';
+      this.container.querySelector('.page-header')?.appendChild(this.filterTag);
+    }
+
     this.activeFilter = null; // Holds { p, i } when filtered
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -25,7 +31,7 @@ export class RisksComponent {
     this.btnAdd.addEventListener('click', () => this.openAddModal());
     
     // Clear filter tag when clicked
-    this.filterTag.addEventListener('click', () => {
+    this.filterTag?.addEventListener('click', () => {
       this.activeFilter = null;
       this.render();
     });
@@ -79,26 +85,12 @@ export class RisksComponent {
         const count = counts[`${p}_${i}`] || 0;
         
         let level = 'low';
-        if (p === 5) {
-          if (i === 1) level = 'low';
-          else if (i === 2) level = 'med';
-          else if (i === 3) level = 'high';
-          else if (i === 4) level = 'veryhigh';
-          else if (i === 5) level = 'critical';
-        } else if (p === 4) {
-          if (i === 1) level = 'low';
-          else if (i === 2) level = 'med';
-          else if (i === 3) level = 'high';
-          else if (i === 4) level = 'veryhigh';
-          else if (i === 5) level = 'critical';
-        } else if (p === 3) {
-          if (i === 1) level = 'low';
-          else if (i === 2 || i === 3) level = 'med';
-          else if (i === 4 || i === 5) level = 'high';
-        } else if (p === 2) {
-          if (i <= 3) level = 'low';
-          else level = 'med';
-        } else if (p === 1) {
+        // Use the same rating logic as PmpCalculators.calculateRisk (score >= 12 → high, >= 5 → med)
+        if (score >= 12) {
+          level = score >= 20 ? 'critical' : score >= 16 ? 'veryhigh' : 'high';
+        } else if (score >= 5) {
+          level = 'med';
+        } else {
           level = 'low';
         }
         
@@ -154,11 +146,11 @@ export class RisksComponent {
   renderTable(risks) {
     const lang = store.state.language || 'en';
     let filteredRisks = risks;
-    
+
     // Apply heatmap cell filters
     if (this.activeFilter) {
       const { p, i } = this.activeFilter;
-      filteredRisks = risks.filter(r => 
+      filteredRisks = risks.filter(r =>
         Math.max(1, Math.min(5, Number(r.probability || 1))) === p &&
         Math.max(1, Math.min(5, Number(r.impact || 1))) === i
       );
@@ -182,11 +174,12 @@ export class RisksComponent {
 
     let html = '';
     filteredRisks.forEach(risk => {
+      // Use PmpCalculators for consistent rating (same logic as everywhere else)
       const calc = PmpCalculators.calculateRisk(risk.probability, risk.impact);
-      
+
       let ratingClass = 'badge-planning';
       let ratingColor = 'var(--text-muted)';
-      
+
       if (calc.rating === 'High') {
         ratingClass = 'badge-closing';
         ratingColor = 'var(--status-danger)';
@@ -201,7 +194,7 @@ export class RisksComponent {
       const categoryText = t('risk_cat_' + risk.category.toLowerCase().replace(' ', '')) || risk.category;
       const strategyText = t('risk_strat_' + risk.strategy.toLowerCase()) || risk.strategy;
       const statusText = risk.status === 'Active' ? t('risk_status_active') : t('risk_status_closed');
-      
+
       html += `
         <tr>
           <td>
@@ -228,8 +221,8 @@ export class RisksComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-risk" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${risk.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -237,24 +230,21 @@ export class RisksComponent {
     });
     this.tableBody.innerHTML = html;
 
-    // Bind Edit/Delete buttons
-    this.tableBody.querySelectorAll('.btn-edit-risk').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const risk = risks.find(item => item.id === id);
         if (risk) this.openEditModal(risk);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-risk').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this risk log entry?')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_risk') || 'Are you sure you want to delete this risk log entry?')) {
           store.deleteRisk(id);
           store.publish('notify', { type: 'success', message: 'Risk entry deleted successfully.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(risk = {}) {

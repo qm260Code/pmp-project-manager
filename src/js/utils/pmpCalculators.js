@@ -121,17 +121,3 @@ export const PmpCalculators = {
     };
   }
 };
-
-// Simple self test run on load (logged in console to fulfill automated checks)
-try {
-  const evmTest = PmpCalculators.calculateEVM([
-    { plannedValue: 100, earnedValue: 90, actualCost: 110 }
-  ]);
-  const riskTest = PmpCalculators.calculateRisk(4, 3);
-  console.log('[PmpCalculators Self-Test] Loaded.', {
-    evm_cpi: evmTest.CPI.toFixed(2), // 0.82
-    risk_score: riskTest.score // 12 (High)
-  });
-} catch (e) {
-  console.error('[PmpCalculators Self-Test] Failed.', e);
-}

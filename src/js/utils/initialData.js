@@ -22,6 +22,10 @@ export const InitialData = {
     schedule: "Schedule & Gantt",
     cost: "Cost & EVM",
     raci: "RACI Matrix",
+    team: "Team Structure",
+    actionItems: "Action Items Tracker",
+    changeRequests: "Change Requests Log",
+    requirements: "Requirements Matrix (RTM)",
     export: "Export & Reports"
   },
   // Text contents for PMP major deliverables (English Default)

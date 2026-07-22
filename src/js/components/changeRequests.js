@@ -12,7 +12,7 @@ export class ChangeRequestsComponent {
     this.initEvents();
     this.render();
 
-    store.subscribe('state-updated', () => {
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -126,8 +126,8 @@ export class ChangeRequestsComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-cr" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${cr.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -136,23 +136,21 @@ export class ChangeRequestsComponent {
     
     this.tableBody.innerHTML = html;
 
-    this.tableBody.querySelectorAll('.btn-edit-cr').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const cr = crs.find(item => item.id === id);
         if (cr) this.openEditModal(cr);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-cr').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this change request log? This cannot be undone.')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this change request log? This cannot be undone.')) {
           store.deleteChangeRequest(id);
           store.publish('notify', { type: 'success', message: 'Change request entry deleted.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(cr = {}) {

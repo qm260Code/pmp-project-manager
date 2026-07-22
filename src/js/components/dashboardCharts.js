@@ -18,7 +18,7 @@ export class DashboardCharts {
     // Bind resize event
     window.addEventListener('resize', () => {
       Object.values(this.charts).forEach(chart => {
-        if (chart) chart.resize();
+        if (chart && typeof chart.resize === 'function') chart.resize();
       });
     });
   }
@@ -44,16 +44,41 @@ export class DashboardCharts {
 
   dispose() {
     Object.values(this.charts).forEach(chart => {
-      if (chart) chart.dispose();
+      if (chart && typeof chart.dispose === 'function') chart.dispose();
     });
+  }
+
+  ensureChartEngine(el, title, rows = []) {
+    if (!el) return false;
+    if (window.echarts) return true;
+
+    const body = rows.length
+      ? rows.map(row => `
+          <div class="fallback-row">
+            <span>${row.label}</span>
+            <strong>${row.value}</strong>
+          </div>
+        `).join('')
+      : `<div class="chart-empty-state">${t('dashboard_no_schedule')}</div>`;
+
+    el.innerHTML = `
+      <div class="chart-fallback">
+        <div class="chart-fallback-title">${title}</div>
+        <div class="chart-fallback-body">${body}</div>
+      </div>
+    `;
+    return false;
   }
 
   renderGantt(state) {
     const el = document.getElementById('chart-gantt');
-    if (!el || !window.echarts) return;
-    if (!this.charts.gantt) this.charts.gantt = window.echarts.init(el);
-    
     const schedule = state.schedule || [];
+    if (!this.ensureChartEngine(el, 'Schedule Summary', schedule.slice(0, 6).map(task => ({
+      label: task.name,
+      value: `${task.progress || 0}% | ${task.startDate} to ${task.endDate}`
+    })))) return;
+    if (!this.charts.gantt) this.charts.gantt = window.echarts.init(el);
+
     if (schedule.length === 0) {
       this.charts.gantt.clear();
       return;
@@ -106,7 +131,13 @@ export class DashboardCharts {
 
   renderNetwork(state) {
     const el = document.getElementById('chart-network');
-    if (!el || !window.echarts) return;
+    const schedule = state.schedule || [];
+    const dependencyCount = schedule.filter(t => String(t.dependencies || '').trim()).length;
+    if (!this.ensureChartEngine(el, 'Dependency Network', [
+      { label: 'Activities', value: schedule.length },
+      { label: 'Activities with dependencies', value: dependencyCount },
+      { label: 'Milestones', value: schedule.filter(t => String(t.name || '').includes('Milestone')).length }
+    ])) return;
     if (!this.charts.network) this.charts.network = window.echarts.init(el);
 
     // Mock Network Node data focusing on critical path (Total Float == 0)
@@ -156,10 +187,15 @@ export class DashboardCharts {
 
   renderSCurve(state) {
     const el = document.getElementById('chart-scurve');
-    if (!el || !window.echarts) return;
+    const history = state.evmHistory || [];
+    const latest = history[history.length - 1] || {};
+    if (!this.ensureChartEngine(el, 'EVM S-Curve', [
+      { label: 'Latest PV', value: `¥${Number(latest.PV || 0).toLocaleString()}` },
+      { label: 'Latest EV', value: `¥${Number(latest.EV || 0).toLocaleString()}` },
+      { label: 'Latest AC', value: `¥${Number(latest.AC || 0).toLocaleString()}` }
+    ])) return;
     if (!this.charts.scurve) this.charts.scurve = window.echarts.init(el);
 
-    const history = state.evmHistory || [];
     const xAxis = history.map(h => h.timePoint);
     const pv = history.map(h => h.PV);
     const ev = history.map(h => h.EV);
@@ -192,10 +228,15 @@ export class DashboardCharts {
 
   renderBurndown(state) {
     const el = document.getElementById('chart-burndown');
-    if (!el || !window.echarts) return;
+    const data = state.sprintBurndown || [];
+    const latest = data[data.length - 1] || {};
+    if (!this.ensureChartEngine(el, 'Sprint Burndown', [
+      { label: 'Latest day', value: latest.day || '-' },
+      { label: 'Ideal remaining', value: latest.idealRemaining ?? '-' },
+      { label: 'Actual remaining', value: latest.actualRemaining ?? '-' }
+    ])) return;
     if (!this.charts.burndown) this.charts.burndown = window.echarts.init(el);
 
-    const data = state.sprintBurndown || [];
     const xAxis = data.map(d => d.day);
     const ideal = data.map(d => d.idealRemaining);
     const actual = data.map(d => d.actualRemaining);
@@ -225,10 +266,16 @@ export class DashboardCharts {
 
   renderCFD(state) {
     const el = document.getElementById('chart-cfd');
-    if (!el || !window.echarts) return;
+    const data = state.cfd || [];
+    const latest = data[data.length - 1] || {};
+    if (!this.ensureChartEngine(el, 'Cumulative Flow', [
+      { label: 'Done', value: latest.done ?? '-' },
+      { label: 'Testing', value: latest.testing ?? '-' },
+      { label: 'In progress', value: latest.inProgress ?? '-' },
+      { label: 'To do', value: latest.todo ?? '-' }
+    ])) return;
     if (!this.charts.cfd) this.charts.cfd = window.echarts.init(el);
 
-    const data = state.cfd || [];
     const xAxis = data.map(d => d.date);
     const todo = data.map(d => d.todo);
     const inProgress = data.map(d => d.inProgress);
@@ -253,10 +300,15 @@ export class DashboardCharts {
 
   renderResource(state) {
     const el = document.getElementById('chart-resource');
-    if (!el || !window.echarts) return;
+    const data = state.resourceHistogram || [];
+    const overloads = data.filter(d => Number(d.allocatedHours || 0) > Number(d.capacityHours || 0)).length;
+    if (!this.ensureChartEngine(el, 'Resource Load', [
+      { label: 'Periods tracked', value: data.length },
+      { label: 'Over capacity periods', value: overloads },
+      { label: 'Total allocated hours', value: data.reduce((sum, d) => sum + Number(d.allocatedHours || 0), 0) }
+    ])) return;
     if (!this.charts.resource) this.charts.resource = window.echarts.init(el);
 
-    const data = state.resourceHistogram || [];
     const xAxis = data.map(d => d.period + ' (' + d.role + ')');
     const capacity = data.map(d => d.capacityHours);
     const allocated = data.map(d => d.allocatedHours);
@@ -287,10 +339,15 @@ export class DashboardCharts {
 
   renderControl(state) {
     const el = document.getElementById('chart-control');
-    if (!el || !window.echarts) return;
+    const data = state.controlChart || [];
+    const outOfControl = data.filter(d => Number(d.measurement) > Number(d.UCL) || Number(d.measurement) < Number(d.LCL)).length;
+    if (!this.ensureChartEngine(el, 'Quality Control', [
+      { label: 'Samples', value: data.length },
+      { label: 'Out of control', value: outOfControl },
+      { label: 'Mean target', value: data[0]?.mean ?? '-' }
+    ])) return;
     if (!this.charts.control) this.charts.control = window.echarts.init(el);
 
-    const data = state.controlChart || [];
     const xAxis = data.map(d => d.sampleId);
     const measurement = data.map(d => d.measurement);
     const ucl = data[0] ? data[0].UCL : 0;
@@ -323,10 +380,15 @@ export class DashboardCharts {
 
   renderRiskMatrix(state) {
     const el = document.getElementById('chart-riskmatrix');
-    if (!el || !window.echarts) return;
+    const risks = state.risks || [];
+    const severe = risks.filter(r => Number(r.probability || 0) * Number(r.impact || 0) >= 12).length;
+    if (!this.ensureChartEngine(el, 'Risk Matrix', [
+      { label: 'Registered risks', value: risks.length },
+      { label: 'High severity risks', value: severe },
+      { label: 'Active risks', value: risks.filter(r => r.status === 'Active').length }
+    ])) return;
     if (!this.charts.riskmatrix) this.charts.riskmatrix = window.echarts.init(el);
 
-    const risks = state.risks || [];
     // Data schema: [Probability (0-5), Impact (0-5), description]
     const activeRisks = risks.map(r => [r.probability, r.impact, r.description, r.owner]);
 

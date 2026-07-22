@@ -8,11 +8,11 @@ export class StakeholdersComponent {
     this.quadrant = document.getElementById('stakeholder-quadrant-container');
     this.tableBody = document.getElementById('stakeholder-table-body');
     this.btnAdd = document.getElementById('btn-add-stakeholder');
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -95,7 +95,7 @@ export class StakeholdersComponent {
     let html = '';
     stakeholders.forEach(sh => {
       let engagementClass = 'badge-planning';
-      
+
       const engagementClasses = {
         'Unaware': 'badge-initiating',
         'Resistant': 'badge-closing',
@@ -103,10 +103,10 @@ export class StakeholdersComponent {
         'Supportive': 'badge-executing',
         'Leading': 'badge-monitoring'
       };
-      
+
       const cls = engagementClasses[sh.engagement] || 'badge-planning';
       const text = t('engagement_' + sh.engagement.toLowerCase()) || sh.engagement;
-      
+
       html += `
         <tr>
           <td>
@@ -127,8 +127,8 @@ export class StakeholdersComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-sh" data-id="${sh.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-sh" data-id="${sh.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${sh.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${sh.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -136,24 +136,21 @@ export class StakeholdersComponent {
     });
     this.tableBody.innerHTML = html;
 
-    // Bind Edit/Delete buttons
-    this.tableBody.querySelectorAll('.btn-edit-sh').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const sh = stakeholders.find(item => item.id === id);
         if (sh) this.openEditModal(sh);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-sh').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this stakeholder registry item?')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this stakeholder registry item?')) {
           store.deleteStakeholder(id);
           store.publish('notify', { type: 'success', message: 'Stakeholder removed successfully.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(sh = {}) {

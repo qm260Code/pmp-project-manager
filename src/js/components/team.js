@@ -8,11 +8,11 @@ export class TeamComponent {
     this.canvas = document.getElementById('team-org-tree-canvas');
     this.tableBody = document.getElementById('team-table-body');
     this.btnAdd = document.getElementById('btn-add-team-member');
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -207,8 +207,8 @@ export class TeamComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-team" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${m.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -216,23 +216,21 @@ export class TeamComponent {
     });
     this.tableBody.innerHTML = html;
 
-    this.tableBody.querySelectorAll('.btn-edit-team').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const m = team.find(item => item.id === id);
         if (m) this.openEditModal(m);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-team').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to remove this team member?')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to remove this team member?')) {
           store.deleteTeamMember(id);
           store.publish('notify', { type: 'success', message: 'Team member removed.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(m = null, team = []) {

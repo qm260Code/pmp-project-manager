@@ -9,11 +9,11 @@ export class CostComponent {
     this.kpiContainer = document.getElementById('cost-evm-kpi-container');
     this.tableBody = document.getElementById('cost-table-body');
     this.btnAdd = document.getElementById('btn-add-cost');
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -121,8 +121,8 @@ export class CostComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-cost" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-cost" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${item.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -130,23 +130,21 @@ export class CostComponent {
     });
     this.tableBody.innerHTML = html;
 
-    this.tableBody.querySelectorAll('.btn-edit-cost').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const cost = costs.find(item => item.id === id);
         if (cost) this.openEditModal(cost);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-cost').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this cost item? This will recalculate project EVM metrics.')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this cost item? This will recalculate project EVM metrics.')) {
           store.deleteCostItem(id);
           store.publish('notify', { type: 'success', message: 'Cost item removed successfully.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(item = {}) {

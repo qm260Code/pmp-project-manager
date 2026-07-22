@@ -5,11 +5,10 @@ import { t } from '../utils/i18n.js';
 export class MatrixComponent {
   constructor(container) {
     this.container = document.getElementById('pmp-matrix-container');
-    
+
     this.render();
 
-    // Redraw on store updates
-    store.subscribe('state-updated', () => {
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }

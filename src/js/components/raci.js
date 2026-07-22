@@ -7,11 +7,11 @@ export class RaciComponent {
     this.container = document.getElementById('raci-matrix-table');
     this.btnConfigRoles = document.getElementById('btn-edit-raci-roles');
     this.btnAddActivity = document.getElementById('btn-add-raci-activity');
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }

@@ -1,11 +1,42 @@
 import { InitialData } from './utils/initialData.js';
 
+// All keys that belong to a single project record - defined once to avoid repetition
+const PROJECT_KEYS = [
+  'projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs',
+  'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements',
+  'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'
+];
+
+// Keys whose default value is [] instead of {}
+const ARRAY_KEYS = new Set([
+  'stakeholders', 'risks', 'schedule', 'costs', 'team', 'actionItems',
+  'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown',
+  'cfd', 'resourceHistogram', 'controlChart'
+]);
+
+/** Deep-clone all project keys from a source object into { id, ...keys }. */
+function extractProjectData(id, source) {
+  const obj = { id };
+  PROJECT_KEYS.forEach(key => {
+    obj[key] = JSON.parse(JSON.stringify(source[key] ?? (ARRAY_KEYS.has(key) ? [] : {})));
+  });
+  return obj;
+}
+
+/** Apply all project keys from a source record onto a target object (mutates target). */
+function applyProjectData(target, source) {
+  PROJECT_KEYS.forEach(key => {
+    target[key] = JSON.parse(JSON.stringify(source[key] ?? (ARRAY_KEYS.has(key) ? [] : {})));
+  });
+}
+
 class PmpStore {
   constructor() {
     this.subscribers = {};
     this.history = [];
     this.maxHistory = 3;
-    
+    this._saveTimer = null;
+
     // Load initial state
     this.state = this.loadState();
   }
@@ -20,7 +51,7 @@ class PmpStore {
         const parsed = JSON.parse(stored);
         if (this.validateStateSchema(parsed)) {
           let updated = false;
-          
+
           // Dynamic patch for sidebar custom titles if upgrading from older caches
           if (!parsed.sidebarTitles) {
             parsed.sidebarTitles = {};
@@ -69,7 +100,7 @@ class PmpStore {
             parsed.requirements = [];
             updated = true;
           }
-          
+
           // Dynamic patch for Charting Data Streams
           ['evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'].forEach(key => {
             if (!parsed[key]) {
@@ -82,29 +113,20 @@ class PmpStore {
           if (!parsed.projectsList || !parsed.currentProjectId) {
             parsed.projectsList = [];
             parsed.currentProjectId = 'p-1';
-            
-            const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-            const firstProject = { id: 'p-1' };
-            projectKeys.forEach(key => {
-              firstProject[key] = JSON.parse(JSON.stringify(parsed[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-            });
-            parsed.projectsList.push(firstProject);
+            parsed.projectsList.push(extractProjectData('p-1', parsed));
             updated = true;
           } else {
             // Force-sync active root fields from projectsList to avoid inconsistency
             const activeProject = parsed.projectsList.find(p => p.id === parsed.currentProjectId);
             if (activeProject) {
-              const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-              projectKeys.forEach(key => {
-                parsed[key] = JSON.parse(JSON.stringify(activeProject[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-              });
+              applyProjectData(parsed, activeProject);
             }
           }
 
           if (updated) {
             this.saveToStorage(parsed);
           }
-          
+
           return parsed;
         } else {
           console.warn('[PmpStore] LocalStorage data failed schema validation. Resetting to template.');
@@ -113,24 +135,19 @@ class PmpStore {
     } catch (e) {
       console.error('[PmpStore] Failed parsing LocalStorage JSON:', e);
     }
-    
+
     // Fallback to initial default data
     const defaultData = JSON.parse(JSON.stringify(InitialData));
     defaultData.projectsList = [];
     defaultData.currentProjectId = 'p-1';
     defaultData.language = 'en';
-    
-    const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-    const firstProject = { id: 'p-1' };
-    projectKeys.forEach(key => {
-      firstProject[key] = JSON.parse(JSON.stringify(defaultData[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-    });
-    // Add custom modules default titles if missing
-    firstProject.sidebarTitles.changeRequests = "Change Requests Log";
-    firstProject.sidebarTitles.requirements = "Requirements Matrix (RTM)";
-    
+
+    const firstProject = extractProjectData('p-1', defaultData);
+    // Ensure new module sidebar titles are present
+    firstProject.sidebarTitles.changeRequests = firstProject.sidebarTitles.changeRequests || "Change Requests Log";
+    firstProject.sidebarTitles.requirements = firstProject.sidebarTitles.requirements || "Requirements Matrix (RTM)";
     defaultData.projectsList.push(firstProject);
-    
+
     this.saveToStorage(defaultData);
     return defaultData;
   }
@@ -176,6 +193,9 @@ class PmpStore {
       try {
         const parsed = JSON.parse(previous);
         this.state = parsed;
+        // Rollback is urgent - flush immediately, skip debounce
+        clearTimeout(this._saveTimer);
+        this._saveTimer = null;
         this.saveToStorage(this.state);
         this.publish('state-updated', this.state);
         this.publish('notify', { type: 'warning', message: '已成功回滚到上一次的历史备份。' });
@@ -188,29 +208,42 @@ class PmpStore {
   }
 
   /**
-   * Commit state, update localStorage and notify listeners
+   * Commit state: sync projectsList, notify UI immediately,
+   * then debounce the expensive localStorage write (300ms).
    */
   commit() {
     this.pushHistory();
 
-    // Sync active root fields to projectsList before saving
+    // Sync active project data into projectsList
     if (this.state.projectsList && this.state.currentProjectId) {
-      const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
       const activeIdx = this.state.projectsList.findIndex(p => p.id === this.state.currentProjectId);
       if (activeIdx !== -1) {
-        const projectData = { id: this.state.currentProjectId };
-        projectKeys.forEach(key => {
-          projectData[key] = JSON.parse(JSON.stringify(this.state[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-        });
-        this.state.projectsList[activeIdx] = projectData;
+        this.state.projectsList[activeIdx] = extractProjectData(this.state.currentProjectId, this.state);
       }
     }
 
-    const success = this.saveToStorage(this.state);
-    if (success) {
-      this.publish('state-updated', this.state);
-    } else {
-      this.publish('notify', { type: 'error', message: '数据保存失败，本地存储可能已满！' });
+    // Notify UI immediately so renders feel instant
+    this.publish('state-updated', this.state);
+
+    // Debounce the actual localStorage write to avoid hammering on rapid changes
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      const success = this.saveToStorage(this.state);
+      if (!success) {
+        this.publish('notify', { type: 'error', message: '数据保存失败，本地存储可能已满！' });
+      }
+      this._saveTimer = null;
+    }, 300);
+  }
+
+  /**
+   * Flush any pending debounced save immediately (e.g. before app unload).
+   */
+  flushSave() {
+    if (this._saveTimer !== null) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      this.saveToStorage(this.state);
     }
   }
 
@@ -241,7 +274,12 @@ class PmpStore {
    */
   resetToDefault() {
     this.pushHistory();
-    this.state = JSON.parse(JSON.stringify(InitialData));
+    const defaultData = JSON.parse(JSON.stringify(InitialData));
+    defaultData.projectsList = [];
+    defaultData.currentProjectId = 'p-1';
+    defaultData.language = this.state.language || 'en';
+    defaultData.projectsList.push(extractProjectData('p-1', defaultData));
+    this.state = defaultData;
     this.commit();
     this.publish('notify', { type: 'success', message: '已恢复系统初始默认项目模版。' });
   }
@@ -254,7 +292,7 @@ class PmpStore {
       this.subscribers[topic] = [];
     }
     this.subscribers[topic].push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       this.subscribers[topic] = this.subscribers[topic].filter(cb => cb !== callback);
@@ -294,7 +332,7 @@ class PmpStore {
   }
 
   updateStakeholder(id, updated) {
-    this.state.stakeholders = this.state.stakeholders.map(item => 
+    this.state.stakeholders = this.state.stakeholders.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -313,7 +351,7 @@ class PmpStore {
   }
 
   updateRisk(id, updated) {
-    this.state.risks = this.state.risks.map(item => 
+    this.state.risks = this.state.risks.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -332,7 +370,7 @@ class PmpStore {
   }
 
   updateScheduleItem(id, updated) {
-    this.state.schedule = this.state.schedule.map(item => 
+    this.state.schedule = this.state.schedule.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -351,7 +389,7 @@ class PmpStore {
   }
 
   updateCostItem(id, updated) {
-    this.state.costs = this.state.costs.map(item => 
+    this.state.costs = this.state.costs.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -385,16 +423,15 @@ class PmpStore {
   }
 
   updateRaciRoles(roles) {
-    // Save previous matrix row activity names and create new roles objects
     const oldMatrix = this.state.raci.matrix;
     const newMatrix = oldMatrix.map(row => {
       const newRoles = {};
       roles.forEach(role => {
-        newRoles[role] = row.roles[role] || ''; // preserve previous values if matches
+        newRoles[role] = row.roles[role] || '';
       });
       return { activity: row.activity, roles: newRoles };
     });
-    
+
     this.state.raci.roles = roles;
     this.state.raci.matrix = newMatrix;
     this.commit();
@@ -415,7 +452,7 @@ class PmpStore {
   }
 
   updateTeamMember(id, updated) {
-    this.state.team = this.state.team.map(item => 
+    this.state.team = this.state.team.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -423,7 +460,7 @@ class PmpStore {
 
   deleteTeamMember(id) {
     // Break relationships pointing to this deleted node to avoid rendering cycles
-    this.state.team = this.state.team.map(item => 
+    this.state.team = this.state.team.map(item =>
       item.reportsTo === id ? { ...item, reportsTo: '' } : item
     );
     this.state.team = this.state.team.filter(item => item.id !== id);
@@ -438,7 +475,7 @@ class PmpStore {
   }
 
   updateActionItem(id, updated) {
-    this.state.actionItems = this.state.actionItems.map(item => 
+    this.state.actionItems = this.state.actionItems.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -452,27 +489,19 @@ class PmpStore {
   // Multi-Project APIs
   switchProject(newProjectId) {
     if (newProjectId === this.state.currentProjectId) return;
-    
-    const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-    
+
     // 1. Save current active state to projectsList
-    const currentProjectIndex = this.state.projectsList.findIndex(p => p.id === this.state.currentProjectId);
-    if (currentProjectIndex !== -1) {
-      const projectData = { id: this.state.currentProjectId };
-      projectKeys.forEach(key => {
-        projectData[key] = JSON.parse(JSON.stringify(this.state[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-      });
-      this.state.projectsList[currentProjectIndex] = projectData;
+    const currentIdx = this.state.projectsList.findIndex(p => p.id === this.state.currentProjectId);
+    if (currentIdx !== -1) {
+      this.state.projectsList[currentIdx] = extractProjectData(this.state.currentProjectId, this.state);
     }
-    
+
     // 2. Load target project data to root
     const targetProject = this.state.projectsList.find(p => p.id === newProjectId);
     if (targetProject) {
-      projectKeys.forEach(key => {
-        this.state[key] = JSON.parse(JSON.stringify(targetProject[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-      });
+      applyProjectData(this.state, targetProject);
       this.state.currentProjectId = newProjectId;
-      
+
       // Clear history when switching projects to avoid cross-project rollbacks
       this.history = [];
       this.commit();
@@ -481,24 +510,17 @@ class PmpStore {
   }
 
   createNewProject(name) {
-    const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-    
     // Save current active project first
-    const currentProjectIndex = this.state.projectsList.findIndex(p => p.id === this.state.currentProjectId);
-    if (currentProjectIndex !== -1) {
-      const projectData = { id: this.state.currentProjectId };
-      projectKeys.forEach(key => {
-        projectData[key] = JSON.parse(JSON.stringify(this.state[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-      });
-      this.state.projectsList[currentProjectIndex] = projectData;
+    const currentIdx = this.state.projectsList.findIndex(p => p.id === this.state.currentProjectId);
+    if (currentIdx !== -1) {
+      this.state.projectsList[currentIdx] = extractProjectData(this.state.currentProjectId, this.state);
     }
 
-    // Create a new blank project template
     const newId = 'p-' + Date.now();
     const newProject = {
       id: newId,
       projectInfo: {
-        name: name,
+        name,
         manager: 'Unassigned',
         sponsor: 'Unassigned',
         status: 'Planning',
@@ -546,13 +568,9 @@ class PmpStore {
     };
 
     this.state.projectsList.push(newProject);
-    
-    // Switch to this new project
-    projectKeys.forEach(key => {
-      this.state[key] = JSON.parse(JSON.stringify(newProject[key]));
-    });
+    applyProjectData(this.state, newProject);
     this.state.currentProjectId = newId;
-    
+
     this.history = [];
     this.commit();
     this.publish('notify', { type: 'success', message: `新建并切换至项目：${name}` });
@@ -567,18 +585,13 @@ class PmpStore {
     const indexToDelete = this.state.projectsList.findIndex(p => p.id === projectId);
     if (indexToDelete === -1) return false;
 
-    // Delete the project from the list
     this.state.projectsList = this.state.projectsList.filter(p => p.id !== projectId);
 
-    // If we are deleting the currently active project, switch to another project first
+    // If we deleted the active project, switch to first remaining
     if (this.state.currentProjectId === projectId) {
-      const nextActiveProject = this.state.projectsList[0];
-      const projectKeys = ['projectInfo', 'documents', 'stakeholders', 'risks', 'schedule', 'costs', 'raci', 'team', 'actionItems', 'sidebarTitles', 'changeRequests', 'requirements', 'evmHistory', 'sprintBurndown', 'cfd', 'resourceHistogram', 'controlChart'];
-      
-      projectKeys.forEach(key => {
-        this.state[key] = JSON.parse(JSON.stringify(nextActiveProject[key] || (key === 'changeRequests' || key === 'requirements' ? [] : {})));
-      });
-      this.state.currentProjectId = nextActiveProject.id;
+      const nextProject = this.state.projectsList[0];
+      applyProjectData(this.state, nextProject);
+      this.state.currentProjectId = nextProject.id;
     }
 
     this.history = [];
@@ -597,7 +610,7 @@ class PmpStore {
 
   updateChangeRequest(id, updated) {
     if (!this.state.changeRequests) this.state.changeRequests = [];
-    this.state.changeRequests = this.state.changeRequests.map(item => 
+    this.state.changeRequests = this.state.changeRequests.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -619,7 +632,7 @@ class PmpStore {
 
   updateRequirement(id, updated) {
     if (!this.state.requirements) this.state.requirements = [];
-    this.state.requirements = this.state.requirements.map(item => 
+    this.state.requirements = this.state.requirements.map(item =>
       item.id === id ? { ...item, ...updated } : item
     );
     this.commit();
@@ -639,4 +652,8 @@ class PmpStore {
 
 export const store = new PmpStore();
 window.pmpStore = store; // attach globally for debug
+
+// Flush any pending debounced save before the page unloads to prevent data loss
+window.addEventListener('beforeunload', () => store.flushSave());
+
 export default store;

@@ -9,11 +9,11 @@ export class ScheduleComponent {
     this.ganttContainer = document.getElementById('gantt-chart-container');
     this.tableBody = document.getElementById('schedule-table-body');
     this.btnAdd = document.getElementById('btn-add-task');
-    
+
     this.initEvents();
     this.render();
-    
-    store.subscribe('state-updated', () => {
+
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -217,7 +217,7 @@ export class ScheduleComponent {
       const layout = PmpCalculators.getGanttBarLayout(task.startDate, task.endDate, pStartStr, pEndStr, timelineWidth);
       const x = leftPanelWidth + layout.left;
       
-      const isMilestone = task.name.includes('里程碑') || task.name.includes('Milestone');
+      const isMilestone = task.isMilestone || task.name.includes('里程碑') || task.name.includes('Milestone');
       const progress = Math.max(0, Math.min(100, Number(task.progress || 0)));
 
       if (isMilestone) {
@@ -282,11 +282,11 @@ export class ScheduleComponent {
     }
 
     const sorted = [...schedule].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-    
+
     let html = '';
     sorted.forEach(task => {
-      const isMilestone = task.name.includes('里程碑') || task.name.includes('Milestone');
-      
+      const isMilestone = task.isMilestone || task.name.includes('里程碑') || task.name.includes('Milestone');
+
       html += `
         <tr>
           <td>
@@ -316,32 +316,30 @@ export class ScheduleComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-task" data-id="${task.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-task" data-id="${task.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${task.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${task.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
       `;
     });
-    
+
     this.tableBody.innerHTML = html;
 
-    this.tableBody.querySelectorAll('.btn-edit-task').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener instead of per-button bindings
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         this.openEditModalById(id);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-task').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this task? This will break dependency lines.')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_task') || 'Are you sure you want to delete this task? This will break dependency lines.')) {
           store.deleteScheduleItem(id);
           store.publish('notify', { type: 'success', message: 'Activity removed successfully.' });
         }
-      });
-    });
+      }
+    };
   }
 
   openEditModalById(id) {

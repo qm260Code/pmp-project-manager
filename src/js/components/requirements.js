@@ -12,7 +12,7 @@ export class RequirementsComponent {
     this.initEvents();
     this.render();
 
-    store.subscribe('state-updated', () => {
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -135,8 +135,8 @@ export class RequirementsComponent {
           </td>
           <td>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-edit-req" data-id="${req.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
-              <button class="btn btn-danger btn-delete-req" data-id="${req.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
+              <button class="btn btn-secondary" data-action="edit" data-id="${req.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_edit')}</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${req.id}" style="padding: 3px 8px; font-size:12px;">${t('btn_delete')}</button>
             </div>
           </td>
         </tr>
@@ -145,23 +145,21 @@ export class RequirementsComponent {
     
     this.tableBody.innerHTML = html;
 
-    this.tableBody.querySelectorAll('.btn-edit-req').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
+    // Single delegated listener
+    this.tableBody.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit') {
         const req = reqs.find(item => item.id === id);
         if (req) this.openEditModal(req);
-      });
-    });
-
-    this.tableBody.querySelectorAll('.btn-delete-req').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Are you sure you want to delete this requirement item?')) {
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this requirement item?')) {
           store.deleteRequirement(id);
           store.publish('notify', { type: 'success', message: 'Requirement item deleted.' });
         }
-      });
-    });
+      }
+    };
   }
 
   getFormHtml(req = {}) {

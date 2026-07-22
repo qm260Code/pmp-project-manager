@@ -8,11 +8,11 @@ export class DashboardComponent {
     this.container = container;
     this.kpiContainer = document.getElementById('dashboard-kpi-container');
     this.chartsController = new DashboardCharts();
-    
+
     this.render();
-    
+
     // Subscribe to store updates to trigger re-renders
-    store.subscribe('state-updated', () => {
+    this._unsubscribe = store.subscribe('state-updated', () => {
       this.render();
     });
   }
@@ -109,6 +109,5 @@ export class DashboardComponent {
         </div>
       </div>
     `;
-  }
   }
 }

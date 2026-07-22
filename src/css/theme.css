@@ -2,7 +2,7 @@
 
 :root {
   /* Bosch Color Palette (Light corporate brand identity) */
-  --bg-primary: #eff1f4; /* Light gray page background */
+  --bg-primary: #f3f5f7; /* Light gray page background */
   --bg-secondary: #ffffff; /* White panel/sidebar background */
   --bg-surface: rgba(255, 255, 255, 0.85);
   --bg-surface-opaque: #ffffff;
@@ -57,7 +57,7 @@
   --header-height: 70px;
   
   /* Shadows & Glass overrides */
-  --shadow-lg: 0 4px 18px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 8px 24px -20px rgba(17, 24, 39, 0.28), 0 2px 8px -6px rgba(17, 24, 39, 0.16);
   --shadow-neon: 0 0 10px rgba(237, 0, 7, 0.04);
   --glass-blur: none;
 }
@@ -74,7 +74,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -82,7 +82,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.25;
 }
 
@@ -114,14 +114,14 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--shadow-lg);
   transition: all 0.3s ease;
 }
 
 .glass-panel:hover {
-  border-color: var(--border-color-active);
-  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.6), var(--shadow-neon);
+  border-color: #d1d5db;
+  box-shadow: 0 12px 28px -22px rgba(17, 24, 39, 0.4), var(--shadow-neon);
 }
 
 .btn {
@@ -133,7 +133,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -178,7 +178,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   border-radius: 9999px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
 }
 
 .badge-initiating { color: var(--pmp-initiating); background: var(--pmp-initiating-bg); border: 1px solid rgba(0, 86, 145, 0.15); }
