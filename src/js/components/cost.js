@@ -141,7 +141,7 @@ export class CostComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this cost item? This will recalculate project EVM metrics.')) {
           store.deleteCostItem(id);
-          store.publish('notify', { type: 'success', message: 'Cost item removed successfully.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_cost') } });
         }
       }
     };
@@ -159,7 +159,7 @@ export class CostComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="cost-desc">${t('label_cost_desc')}</label>
-          <input type="text" id="cost-desc" name="description" class="form-control" value="${item.description || ''}" placeholder="e.g. WMS server procurement fees" required>
+          <input type="text" id="cost-desc" name="description" class="form-control" value="${item.description || ''}" placeholder="${t('placeholder_cost_description')}" required>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
@@ -199,7 +199,7 @@ export class CostComponent {
           earnedValue: ev
         });
         
-        store.publish('notify', { type: 'success', message: 'Cost package added successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_cost') } });
         return true;
       }
     );
@@ -221,7 +221,7 @@ export class CostComponent {
           earnedValue: ev
         });
 
-        store.publish('notify', { type: 'success', message: 'Cost package updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_cost') } });
         return true;
       }
     );

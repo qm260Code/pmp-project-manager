@@ -198,7 +198,7 @@ class PmpStore {
         this._saveTimer = null;
         this.saveToStorage(this.state);
         this.publish('state-updated', this.state);
-        this.publish('notify', { type: 'warning', message: '已成功回滚到上一次的历史备份。' });
+        this.publish('notify', { type: 'warning', messageKey: 'msg_rollback_success' });
         return true;
       } catch (e) {
         console.error('[PmpStore] Failed during history parse rollback:', e);
@@ -230,7 +230,7 @@ class PmpStore {
     this._saveTimer = setTimeout(() => {
       const success = this.saveToStorage(this.state);
       if (!success) {
-        this.publish('notify', { type: 'error', message: '数据保存失败，本地存储可能已满！' });
+        this.publish('notify', { type: 'error', messageKey: 'msg_save_error' });
       }
       this._saveTimer = null;
     }, 300);
@@ -257,14 +257,14 @@ class PmpStore {
         this.pushHistory();
         this.state = parsed;
         this.commit();
-        this.publish('notify', { type: 'success', message: '项目数据成功导入并已同步。' });
+        this.publish('notify', { type: 'success', messageKey: 'msg_import_success' });
         return true;
       } else {
         throw new Error('JSON 数据缺失 PMP 核心架构键值（例如 risks, schedule, costs）。');
       }
     } catch (e) {
       console.error('[PmpStore] Import failed:', e);
-      this.publish('notify', { type: 'error', message: `导入失败: ${e.message}` });
+      this.publish('notify', { type: 'error', messageKey: 'msg_import_failed' });
       return false;
     }
   }
@@ -281,7 +281,7 @@ class PmpStore {
     defaultData.projectsList.push(extractProjectData('p-1', defaultData));
     this.state = defaultData;
     this.commit();
-    this.publish('notify', { type: 'success', message: '已恢复系统初始默认项目模版。' });
+    this.publish('notify', { type: 'success', messageKey: 'msg_reset_success' });
   }
 
   /**
@@ -505,7 +505,11 @@ class PmpStore {
       // Clear history when switching projects to avoid cross-project rollbacks
       this.history = [];
       this.commit();
-      this.publish('notify', { type: 'success', message: `已成功切换到项目：${this.state.projectInfo.name}` });
+      this.publish('notify', {
+        type: 'success',
+        messageKey: 'msg_switched_project',
+        params: { name: this.state.projectInfo.name }
+      });
     }
   }
 
@@ -573,12 +577,16 @@ class PmpStore {
 
     this.history = [];
     this.commit();
-    this.publish('notify', { type: 'success', message: `新建并切换至项目：${name}` });
+    this.publish('notify', {
+      type: 'success',
+      messageKey: 'msg_switched_project',
+      params: { name }
+    });
   }
 
   deleteProject(projectId) {
     if (this.state.projectsList.length <= 1) {
-      this.publish('notify', { type: 'error', message: '无法删除：系统中必须保留至少一个项目！' });
+      this.publish('notify', { type: 'error', messageKey: 'msg_cannot_delete_last_project' });
       return false;
     }
 
@@ -596,7 +604,7 @@ class PmpStore {
 
     this.history = [];
     this.commit();
-    this.publish('notify', { type: 'success', message: '项目已从系统中删除。' });
+    this.publish('notify', { type: 'success', messageKey: 'msg_project_deleted' });
     return true;
   }
 

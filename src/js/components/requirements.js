@@ -89,6 +89,7 @@ export class RequirementsComponent {
       else if (req.status === 'Verified') statusClass = 'badge-initiating';
       else if (req.status === 'In Progress') statusClass = 'badge-monitoring';
       else if (req.status === 'Deferred') statusClass = 'badge-closing';
+      const statusText = t(`status_${String(req.status || 'Draft').toLowerCase().replaceAll(' ', '_')}`);
 
       let priorityStyle = 'background: #f1f3f5; color: #495057;'; 
       if (req.priority === 'High') priorityStyle = 'background: #fff5f5; color: var(--status-danger); border: 1px solid rgba(220,38,38,0.2);';
@@ -131,7 +132,7 @@ export class RequirementsComponent {
             <div style="font-size: 12px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${req.verificationMethod || ''}">${req.verificationMethod || unspecifiedText}</div>
           </td>
           <td>
-            <span class="badge ${statusClass}">${req.status}</span>
+            <span class="badge ${statusClass}">${statusText}</span>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
@@ -156,7 +157,7 @@ export class RequirementsComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this requirement item?')) {
           store.deleteRequirement(id);
-          store.publish('notify', { type: 'success', message: 'Requirement item deleted.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_requirement') } });
         }
       }
     };
@@ -167,12 +168,12 @@ export class RequirementsComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="req-name">${t('label_req_name')}</label>
-          <input type="text" id="req-name" name="name" class="form-control" value="${req.name || ''}" placeholder="e.g. SMS alert module for sensor exceptions" required>
+          <input type="text" id="req-name" name="name" class="form-control" value="${req.name || ''}" placeholder="${t('placeholder_requirement_name')}" required>
         </div>
         
         <div class="form-group">
           <label for="req-desc">${t('label_req_desc')}</label>
-          <textarea id="req-desc" name="description" class="form-control" style="height:60px;" placeholder="Describe requirement rules, business flows and UAT conditions..." required>${req.description || ''}</textarea>
+          <textarea id="req-desc" name="description" class="form-control" style="height:60px;" placeholder="${t('placeholder_requirement_description')}" required>${req.description || ''}</textarea>
         </div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -198,11 +199,11 @@ export class RequirementsComponent {
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
             <label for="req-owner">${t('label_req_owner')}</label>
-            <input type="text" id="req-owner" name="owner" class="form-control" value="${req.owner || ''}" placeholder="e.g. Jane Smith" required>
+            <input type="text" id="req-owner" name="owner" class="form-control" value="${req.owner || ''}" placeholder="${t('placeholder_person_name')}" required>
           </div>
           <div class="form-group">
             <label for="req-release">${t('label_req_release')}</label>
-            <input type="text" id="req-release" name="targetRelease" class="form-control" value="${req.targetRelease || ''}" placeholder="e.g. t-4 (WMS dev phase)" required>
+            <input type="text" id="req-release" name="targetRelease" class="form-control" value="${req.targetRelease || ''}" placeholder="${t('placeholder_target_release')}" required>
           </div>
         </div>
 
@@ -210,16 +211,16 @@ export class RequirementsComponent {
           <div class="form-group">
             <label for="req-status">${t('label_req_status')}</label>
             <select id="req-status" name="status" class="form-control">
-              <option value="Draft" ${req.status === 'Draft' ? 'selected' : ''}>Draft</option>
-              <option value="In Progress" ${req.status === 'In Progress' || !req.status ? 'selected' : ''}>In Progress</option>
-              <option value="Verified" ${req.status === 'Verified' ? 'selected' : ''}>Verified</option>
-              <option value="Accepted" ${req.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
-              <option value="Deferred" ${req.status === 'Deferred' ? 'selected' : ''}>Deferred</option>
+              <option value="Draft" ${req.status === 'Draft' ? 'selected' : ''}>${t('status_draft')}</option>
+              <option value="In Progress" ${req.status === 'In Progress' || !req.status ? 'selected' : ''}>${t('status_in_progress')}</option>
+              <option value="Verified" ${req.status === 'Verified' ? 'selected' : ''}>${t('status_verified')}</option>
+              <option value="Accepted" ${req.status === 'Accepted' ? 'selected' : ''}>${t('status_accepted')}</option>
+              <option value="Deferred" ${req.status === 'Deferred' ? 'selected' : ''}>${t('status_deferred')}</option>
             </select>
           </div>
           <div class="form-group">
             <label for="req-verify">${t('label_req_verify')}</label>
-            <input type="text" id="req-verify" name="verificationMethod" class="form-control" value="${req.verificationMethod || ''}" placeholder="e.g. UAT demonstration, API integration test" required>
+            <input type="text" id="req-verify" name="verificationMethod" class="form-control" value="${req.verificationMethod || ''}" placeholder="${t('placeholder_verification_method')}" required>
           </div>
         </div>
       </div>
@@ -241,7 +242,7 @@ export class RequirementsComponent {
           status: data.status,
           verificationMethod: data.verificationMethod
         });
-        store.publish('notify', { type: 'success', message: 'Requirement item created.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_requirement') } });
         return true;
       }
     );
@@ -262,7 +263,7 @@ export class RequirementsComponent {
           status: data.status,
           verificationMethod: data.verificationMethod
         });
-        store.publish('notify', { type: 'success', message: 'Requirement details updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_requirement') } });
         return true;
       }
     );

@@ -73,7 +73,7 @@ export class StakeholdersComponent {
       if (sh.engagement === 'Resistant') tag.classList.add('engaged-resistant');
       
       tag.textContent = sh.name;
-      tag.title = `${sh.role}\nPower:${sh.power} / Interest:${sh.interest}\nStatus: ${t('engagement_' + sh.engagement.toLowerCase()) || sh.engagement}`;
+      tag.title = `${sh.role}\n${t('label_power_short')}: ${sh.power} / ${t('label_interest_short')}: ${sh.interest}\n${t('label_status_short')}: ${t('engagement_' + sh.engagement.toLowerCase()) || sh.engagement}`;
       tag.addEventListener('click', () => this.openEditModal(sh));
       
       targetCell.appendChild(tag);
@@ -147,7 +147,7 @@ export class StakeholdersComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this stakeholder registry item?')) {
           store.deleteStakeholder(id);
-          store.publish('notify', { type: 'success', message: 'Stakeholder removed successfully.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_stakeholder') } });
         }
       }
     };
@@ -163,11 +163,11 @@ export class StakeholdersComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="sh-name">${t('label_sh_name')}</label>
-          <input type="text" id="sh-name" name="name" class="form-control" value="${sh.name || ''}" placeholder="e.g. John Doe" required>
+          <input type="text" id="sh-name" name="name" class="form-control" value="${sh.name || ''}" placeholder="${t('placeholder_person_name')}" required>
         </div>
         <div class="form-group">
           <label for="sh-role">${t('label_sh_role')}</label>
-          <input type="text" id="sh-role" name="role" class="form-control" value="${sh.role || ''}" placeholder="e.g. Project Sponsor, Tech Expert" required>
+          <input type="text" id="sh-role" name="role" class="form-control" value="${sh.role || ''}" placeholder="${t('placeholder_stakeholder_role')}" required>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
@@ -195,7 +195,7 @@ export class StakeholdersComponent {
         </div>
         <div class="form-group">
           <label for="sh-strategy">${t('label_sh_strategy')}</label>
-          <textarea id="sh-strategy" name="strategy" class="form-control" placeholder="e.g. Weekly status report updates...">${sh.strategy || ''}</textarea>
+          <textarea id="sh-strategy" name="strategy" class="form-control" placeholder="${t('placeholder_engagement_strategy')}">${sh.strategy || ''}</textarea>
         </div>
       </div>
     `;
@@ -207,7 +207,7 @@ export class StakeholdersComponent {
       this.getFormHtml(),
       (data) => {
         store.addStakeholder(data);
-        store.publish('notify', { type: 'success', message: 'Stakeholder added successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_stakeholder') } });
         return true;
       }
     );
@@ -219,7 +219,7 @@ export class StakeholdersComponent {
       this.getFormHtml(sh),
       (data) => {
         store.updateStakeholder(sh.id, data);
-        store.publish('notify', { type: 'success', message: 'Stakeholder details updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_stakeholder') } });
         return true;
       }
     );

@@ -284,20 +284,26 @@
   }
 
   .app-header {
-    align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     height: auto;
   }
 
-  .header-project-info,
-  .header-status-pills,
-  .header-actions {
+  .header-project-info {
+    grid-column: 1 / -1;
     width: 100%;
     flex-wrap: wrap;
   }
 
+  .header-status-pills {
+    width: auto;
+    flex-wrap: wrap;
+  }
+
   .header-actions {
-    justify-content: flex-start;
+    width: auto;
+    justify-content: flex-end;
   }
 }
 
@@ -319,6 +325,25 @@
     font-size: 20px;
   }
 
+  .app-header {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-status-pills,
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chart-sections-grid,
+  .dashboard-sections {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 1100px) {
   .chart-sections-grid,
   .dashboard-sections {
     grid-template-columns: 1fr !important;

@@ -35,7 +35,7 @@ export class ExportComponent {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    store.publish('notify', { type: 'success', message: 'Project JSON backup downloaded successfully.' });
+    store.publish('notify', { type: 'success', messageKey: 'msg_backup_downloaded' });
   }
 
   importProjectJson(e) {
@@ -47,7 +47,7 @@ export class ExportComponent {
       this.fileImportJson.value = '';
     };
     reader.onerror = () => {
-      store.publish('notify', { type: 'error', message: 'Failed to read JSON backup file.' });
+      store.publish('notify', { type: 'error', messageKey: 'msg_backup_read_failed' });
     };
     reader.readAsText(file);
   }
@@ -58,7 +58,7 @@ export class ExportComponent {
     const stakeholders = store.state.stakeholders || [];
     const isEn = (store.state.language || 'en') !== 'zh';
     if (stakeholders.length === 0) {
-      store.publish('notify', { type: 'warning', message: isEn ? 'No stakeholder data registered, cannot export.' : '相关方登记册无数据，无法导出。' });
+      store.publish('notify', { type: 'warning', messageKey: 'msg_no_stakeholders_export' });
       return;
     }
     const headers = isEn
@@ -72,7 +72,7 @@ export class ExportComponent {
     const risks = store.state.risks || [];
     const isEn = (store.state.language || 'en') !== 'zh';
     if (risks.length === 0) {
-      store.publish('notify', { type: 'warning', message: isEn ? 'No risk data registered, cannot export.' : '风险登记册无数据，无法导出。' });
+      store.publish('notify', { type: 'warning', messageKey: 'msg_no_risks_export' });
       return;
     }
     const headers = isEn
@@ -97,7 +97,7 @@ export class ExportComponent {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    store.publish('notify', { type: 'success', message: `Report ${filename} downloaded successfully.` });
+    store.publish('notify', { type: 'success', messageKey: 'msg_report_downloaded', params: { filename } });
   }
 
   // ─── Print Report ────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ export class ExportComponent {
     const isEn = (state.language || 'en') !== 'zh';
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      store.publish('notify', { type: 'error', message: isEn ? 'Failed to open window. Please allow popups.' : '无法打开新窗口，请允许本站弹出窗口。' });
+      store.publish('notify', { type: 'error', messageKey: 'msg_popup_blocked' });
       return;
     }
 

@@ -130,7 +130,7 @@ export class RaciComponent {
         const index = Number(btn.getAttribute('data-index'));
         if (confirm(t('raci_delete_confirm') || 'Are you sure you want to delete this activity assignment?')) {
           store.deleteRaciActivity(index);
-          store.publish('notify', { type: 'success', message: 'Activity successfully removed.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_activity') } });
         }
       });
     });
@@ -162,12 +162,12 @@ export class RaciComponent {
           .filter(Boolean);
         
         if (newRoles.length === 0) {
-          store.publish('notify', { type: 'error', message: 'Role list cannot be empty!' });
+          store.publish('notify', { type: 'error', messageKey: 'msg_roles_empty' });
           return false;
         }
 
         store.updateRaciRoles(newRoles);
-        store.publish('notify', { type: 'success', message: 'RACI roles updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_roles_updated' });
         return true;
       }
     );
@@ -189,12 +189,12 @@ export class RaciComponent {
       (data) => {
         const name = data.activityName ? data.activityName.trim() : '';
         if (!name) {
-          store.publish('notify', { type: 'error', message: 'Activity name cannot be empty.' });
+          store.publish('notify', { type: 'error', messageKey: 'msg_activity_name_empty' });
           return false;
         }
 
         store.addRaciActivity(name);
-        store.publish('notify', { type: 'success', message: 'RACI activity added.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_activity') } });
         return true;
       }
     );

@@ -78,7 +78,7 @@ export class ActionItemsComponent {
             <div style="font-weight: 500; font-size: 13px;">${this.escapeHTML(item.owner)}</div>
           </td>
           <td>
-            <div style="font-size: 12px; ${dateStyle}" title="${isOverdue ? 'Overdue!' : ''}">
+            <div style="font-size: 12px; ${dateStyle}" title="${isOverdue ? t('title_overdue') : ''}">
               ${item.targetDate} ${isOverdue ? ' ⚠️' : ''}
             </div>
           </td>
@@ -92,7 +92,7 @@ export class ActionItemsComponent {
           </td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" class="action-item-toggle" data-id="${item.id}" ${isCompleted ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px;" title="Toggle Status" />
+              <input type="checkbox" class="action-item-toggle" data-id="${item.id}" ${isCompleted ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px;" title="${t('title_toggle_status')}" />
               <span class="badge ${statusClass}">${statusLabel}</span>
             </div>
           </td>
@@ -115,7 +115,8 @@ export class ActionItemsComponent {
         store.updateActionItem(id, { status: newStatus });
         store.publish('notify', {
           type: 'success',
-          message: `Action status updated to: ${newStatus === 'Completed' ? t('act_status_completed') : t('act_status_pending')}`
+          messageKey: 'msg_status_updated',
+          params: { status: newStatus === 'Completed' ? t('act_status_completed') : t('act_status_pending') }
         });
       });
     });
@@ -131,7 +132,7 @@ export class ActionItemsComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this action item?')) {
           store.deleteActionItem(id);
-          store.publish('notify', { type: 'success', message: 'Action item deleted.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_action') } });
         }
       }
     };
@@ -161,7 +162,7 @@ export class ActionItemsComponent {
       ownerFieldHtml = `
         <input type="text" id="item-owner" name="owner" class="form-control" 
                value="${item ? this.escapeHTML(item.owner) : ''}" 
-               placeholder="e.g. John Doe" required>
+               placeholder="${t('placeholder_person_name')}" required>
         <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">${tipText}</p>
       `;
     }
@@ -170,7 +171,7 @@ export class ActionItemsComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="item-content">${t('label_act_content')}</label>
-          <textarea id="item-content" name="content" class="form-control" style="height:60px;" placeholder="e.g. Test IoT temperature sensors..." required>${item ? item.content : ''}</textarea>
+          <textarea id="item-content" name="content" class="form-control" style="height:60px;" placeholder="${t('placeholder_action_content')}" required>${item ? item.content : ''}</textarea>
         </div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -230,7 +231,7 @@ export class ActionItemsComponent {
           priority: data.priority,
           status: data.status
         });
-        store.publish('notify', { type: 'success', message: 'Action item created.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_action') } });
         return true;
       }
     );
@@ -250,7 +251,7 @@ export class ActionItemsComponent {
           priority: data.priority,
           status: data.status
         });
-        store.publish('notify', { type: 'success', message: 'Action item details updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_action') } });
         return true;
       }
     );

@@ -104,7 +104,7 @@ export class RisksComponent {
                data-p="${p}" 
                data-i="${i}" 
                style="${borderStyle}"
-               title="P: ${p} | I: ${i}\nScore: ${score} pts\nActive risks: ${count}">
+               title="${t('chart_probability')}: ${p} | ${t('chart_impact')}: ${i}\n${t('chart_score')}: ${score}\n${t('chart_active_risks')}: ${count}">
              ${score}
              ${count > 0 ? `<span class="count">${count}</span>` : ''}
           </div>
@@ -154,7 +154,7 @@ export class RisksComponent {
         Math.max(1, Math.min(5, Number(r.probability || 1))) === p &&
         Math.max(1, Math.min(5, Number(r.impact || 1))) === i
       );
-      this.filterTag.innerHTML = `🔍 Filter: P:${p} / I:${i} &times;`;
+      this.filterTag.innerHTML = `${t('risk_filter')}: P:${p} / I:${i} &times;`;
       this.filterTag.style.display = 'inline-flex';
       this.filterTag.style.cursor = 'pointer';
     } else {
@@ -191,7 +191,13 @@ export class RisksComponent {
         ratingColor = 'var(--status-success)';
       }
 
-      const categoryText = t('risk_cat_' + risk.category.toLowerCase().replace(' ', '')) || risk.category;
+      const categoryKeys = {
+        Technical: 'risk_cat_technical',
+        'Project Management': 'risk_cat_pm',
+        Organizational: 'risk_cat_organizational',
+        External: 'risk_cat_external'
+      };
+      const categoryText = categoryKeys[risk.category] ? t(categoryKeys[risk.category]) : risk.category;
       const strategyText = t('risk_strat_' + risk.strategy.toLowerCase()) || risk.strategy;
       const statusText = risk.status === 'Active' ? t('risk_status_active') : t('risk_status_closed');
 
@@ -200,7 +206,7 @@ export class RisksComponent {
           <td>
             <div style="font-weight: 600; color: var(--text-primary);">${risk.description}</div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top:2px;">
-              ${t('label_risk_status')}: <strong>${statusText}</strong>
+              ${t('label_risk_status')} <strong>${statusText}</strong>
             </div>
           </td>
           <td>
@@ -216,8 +222,8 @@ export class RisksComponent {
             <span class="badge ${ratingClass}">${calc.rating === 'High' ? t('risk_level_high') : calc.rating === 'Medium' ? t('risk_level_med') : t('risk_level_low')}</span>
           </td>
           <td>
-            <div style="font-size:13px; color:var(--text-primary);">${t('label_risk_strat')}: <strong>${strategyText}</strong></div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${t('label_risk_owner')}: ${risk.owner || '-'}</div>
+            <div style="font-size:13px; color:var(--text-primary);">${t('label_risk_strat')} <strong>${strategyText}</strong></div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${t('label_risk_owner')} ${risk.owner || '-'}</div>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
@@ -241,7 +247,7 @@ export class RisksComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_risk') || 'Are you sure you want to delete this risk log entry?')) {
           store.deleteRisk(id);
-          store.publish('notify', { type: 'success', message: 'Risk entry deleted successfully.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_risk') } });
         }
       }
     };
@@ -258,7 +264,7 @@ export class RisksComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="risk-desc">${t('label_risk_desc')}</label>
-          <input type="text" id="risk-desc" name="description" class="form-control" value="${risk.description || ''}" placeholder="e.g. Delay in sensor vendor shipment" required>
+          <input type="text" id="risk-desc" name="description" class="form-control" value="${risk.description || ''}" placeholder="${t('placeholder_risk_description')}" required>
         </div>
         <div class="form-group">
           <label for="risk-cat">${t('label_risk_cat')}</label>
@@ -295,7 +301,7 @@ export class RisksComponent {
           </div>
           <div class="form-group">
             <label for="risk-owner">${t('label_risk_owner')}</label>
-            <input type="text" id="risk-owner" name="owner" class="form-control" value="${risk.owner || ''}" placeholder="e.g. John Doe" required>
+            <input type="text" id="risk-owner" name="owner" class="form-control" value="${risk.owner || ''}" placeholder="${t('placeholder_person_name')}" required>
           </div>
         </div>
         <div class="form-group">
@@ -315,7 +321,7 @@ export class RisksComponent {
       this.getFormHtml(),
       (data) => {
         store.addRisk(data);
-        store.publish('notify', { type: 'success', message: 'Risk added successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_risk') } });
         return true;
       }
     );
@@ -327,7 +333,7 @@ export class RisksComponent {
       this.getFormHtml(risk),
       (data) => {
         store.updateRisk(risk.id, data);
-        store.publish('notify', { type: 'success', message: 'Risk analysis updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_risk') } });
         return true;
       }
     );

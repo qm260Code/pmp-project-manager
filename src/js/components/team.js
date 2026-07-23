@@ -143,7 +143,7 @@ export class TeamComponent {
       }
 
       svgContent += `
-        <g class="org-card" transform="translate(${x}, ${y})" style="cursor: pointer;" data-id="${m.id}" title="Click to edit member">
+        <g class="org-card" transform="translate(${x}, ${y})" style="cursor: pointer;" data-id="${m.id}" title="${t('title_click_edit_member')}">
           <rect width="${cardWidth}" height="${cardHeight}" rx="8" 
                 fill="${cardBg}" 
                 stroke="${borderStroke}" 
@@ -227,7 +227,7 @@ export class TeamComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to remove this team member?')) {
           store.deleteTeamMember(id);
-          store.publish('notify', { type: 'success', message: 'Team member removed.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_team_member') } });
         }
       }
     };
@@ -240,15 +240,15 @@ export class TeamComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="member-name">${t('label_member_name')}</label>
-          <input type="text" id="member-name" name="name" class="form-control" value="${m ? m.name : ''}" placeholder="e.g. John Doe" required>
+          <input type="text" id="member-name" name="name" class="form-control" value="${m ? m.name : ''}" placeholder="${t('placeholder_person_name')}" required>
         </div>
         <div class="form-group">
           <label for="member-role">${t('label_member_role')}</label>
-          <input type="text" id="member-role" name="role" class="form-control" value="${m ? m.role : ''}" placeholder="e.g. Technical Lead" required>
+          <input type="text" id="member-role" name="role" class="form-control" value="${m ? m.role : ''}" placeholder="${t('placeholder_member_role')}" required>
         </div>
         <div class="form-group">
           <label for="member-department">${t('label_member_dept')}</label>
-          <input type="text" id="member-department" name="department" class="form-control" value="${m ? m.department : ''}" placeholder="e.g. R&D Department" required>
+          <input type="text" id="member-department" name="department" class="form-control" value="${m ? m.department : ''}" placeholder="${t('placeholder_department')}" required>
         </div>
         <div class="form-group">
           <label for="member-reports-to">${t('label_member_reports')}</label>
@@ -289,7 +289,7 @@ export class TeamComponent {
       this.getFormHtml(null, team),
       (data) => {
         store.addTeamMember(data);
-        store.publish('notify', { type: 'success', message: 'Team member added successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_team_member') } });
         return true;
       }
     );
@@ -302,7 +302,7 @@ export class TeamComponent {
       this.getFormHtml(m, team),
       (data) => {
         store.updateTeamMember(m.id, data);
-        store.publish('notify', { type: 'success', message: 'Member info updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_team_member') } });
         return true;
       }
     );

@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PMP Project Management & Process Control Center</title>
+  <title data-i18n="app_title">PMP Project Management & Process Control Center</title>
   <link rel="stylesheet" href="src/css/theme.css">
   <link rel="stylesheet" href="src/css/layout.css">
   <link rel="stylesheet" href="src/css/components.css">
-  <!-- Apache ECharts CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <!-- Vendored for reliable rendering on GitHub Pages and restricted networks. -->
+  <script src="src/vendor/echarts.min.js"></script>
 </head>
 <body>
 
@@ -31,8 +31,8 @@
       <ul class="sidebar-menu" id="sidebar-menu-list"></ul>
       
       <div class="sidebar-footer">
-        <p>Developed by Mo Qiutong</p>
-        <p style="font-size: 10px; margin-top: 4px;">Antigravity Design</p>
+        <p data-i18n="footer_developed_by">Developed by Mo Qiutong</p>
+        <p style="font-size: 10px; margin-top: 4px;" data-i18n="footer_design">Antigravity Design</p>
       </div>
     </aside>
 
@@ -40,11 +40,11 @@
     <header class="app-header">
       <div class="header-project-info" style="display: flex; align-items: center; gap: 12px; cursor: default;">
         <span style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-secondary);" data-i18n="header_project">Project:</span>
-        <select id="project-selector" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; max-width: 280px; text-overflow: ellipsis; padding: 4px 12px; border-radius: 6px;" title="Switch current project"></select>
+        <select id="project-selector" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; max-width: 280px; text-overflow: ellipsis; padding: 4px 12px; border-radius: 6px;" title="Switch current project" data-i18n-title="project_selector_title"></select>
         <span class="badge badge-planning" id="header-project-status">PLANNING</span>
-        <button class="btn btn-secondary" id="btn-edit-project-info" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_properties" title="Edit project details and budget">✏️ Properties</button>
-        <button class="btn btn-secondary" id="btn-add-new-project" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_new_project" title="Create new project template">+ New Project</button>
-        <button class="btn btn-danger" id="btn-delete-current-project" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: none; border-radius: 6px;" data-i18n="header_btn_delete_project" title="Delete current project from system">🗑️ Delete</button>
+        <button class="btn btn-secondary" id="btn-edit-project-info" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_properties" title="Edit project details and budget" data-i18n-title="project_properties_title">✏️ Properties</button>
+        <button class="btn btn-secondary" id="btn-add-new-project" style="padding: 4px 8px; font-size: 12px;" data-i18n="header_btn_new_project" title="Create new project template" data-i18n-title="new_project_title">+ New Project</button>
+        <button class="btn btn-danger" id="btn-delete-current-project" style="padding: 4px 8px; font-size: 12px; cursor: pointer; border: none; border-radius: 6px;" data-i18n="header_btn_delete_project" title="Delete current project from system" data-i18n-title="delete_project_title">🗑️ Delete</button>
       </div>
       
       <!-- Live Indicators -->
@@ -65,14 +65,14 @@
       <!-- Quick Actions & Language Selector -->
       <div class="header-actions">
         <!-- Language Switching Control -->
-        <select id="language-selector" style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; padding: 4px 8px; border-radius: 6px;" title="Switch Language / 切换语言">
+        <select id="language-selector" style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; border: 1px solid var(--border-color); background: var(--bg-surface-opaque); color: var(--text-primary); cursor: pointer; outline: none; padding: 4px 8px; border-radius: 6px;" title="Switch Language / 切换语言" data-i18n-title="language_select_title" aria-label="Switch language" data-i18n-aria-label="language_select_aria">
           <option value="en">EN</option>
           <option value="zh">中文</option>
         </select>
-        <button class="btn btn-secondary" id="btn-quick-rollback" data-i18n="header_rollback" title="Rollback last change">
+        <button class="btn btn-secondary" id="btn-quick-rollback" data-i18n="header_rollback" title="Rollback last change" data-i18n-title="rollback_title">
           ↩️ Undo
         </button>
-        <button class="btn btn-secondary" id="btn-quick-reset" data-i18n="header_template" title="Reset to baseline template">
+        <button class="btn btn-secondary" id="btn-quick-reset" data-i18n="header_template" title="Reset to baseline template" data-i18n-title="reset_title">
           🔄 Template
         </button>
       </div>

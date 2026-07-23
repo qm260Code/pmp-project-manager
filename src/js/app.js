@@ -159,12 +159,12 @@ class PmpApp {
           (data) => {
             const title = data.newTitle ? data.newTitle.trim() : '';
             if (!title) {
-              this.notify({ type: 'error', message: '导航标题不能为空！' });
+              this.notify({ type: 'error', messageKey: 'msg_tab_title_empty' });
               return false;
             }
             // Update Store
             store.updateSidebarTitle(targetView, title);
-            this.notify({ type: 'success', message: `导航标题已更新为: ${title}` });
+            this.notify({ type: 'success', messageKey: 'msg_tab_title_updated', params: { title } });
             return true;
           }
         );
@@ -288,7 +288,6 @@ class PmpApp {
             return false;
           }
           store.createNewProject(name);
-          this.notify({ type: 'success', message: t('msg_new_project_created') + name });
           return true;
         }
       );
@@ -298,7 +297,6 @@ class PmpApp {
     this.btnDeleteProject.addEventListener('click', () => {
       if (confirm(t('msg_confirm_delete_project'))) {
         store.deleteProject(store.state.currentProjectId);
-        this.notify({ type: 'success', message: t('msg_project_deleted') });
       }
     });
 
@@ -306,7 +304,6 @@ class PmpApp {
     this.btnReset.addEventListener('click', () => {
       if (confirm(t('msg_confirm_reset_template'))) {
         store.resetToDefault();
-        this.notify({ type: 'success', message: 'Restored baseline project templates.' });
       }
     });
 
@@ -317,7 +314,6 @@ class PmpApp {
         return;
       }
       store.rollback();
-      this.notify({ type: 'success', message: t('msg_rollback_success') });
     });
   }
 
@@ -377,7 +373,12 @@ class PmpApp {
     }
     
     // Update Status Badge
-    this.projectStatusDisplay.textContent = repairText(status || 'PLANNING').toUpperCase();
+    const statusKey = status === 'Closed'
+      ? 'project_status_closed'
+      : (status === 'In Progress' || status === 'Executing')
+        ? 'project_status_executing'
+        : 'project_status_planning';
+    this.projectStatusDisplay.textContent = t(statusKey);
     
     // Status color mapping
     this.projectStatusDisplay.className = 'badge';
@@ -407,8 +408,13 @@ class PmpApp {
     }
   }
 
-  notify({ type, message }) {
+  notify({ type, message, messageKey, params = {} }) {
     if (this.toastTimer) clearTimeout(this.toastTimer);
+
+    let resolvedMessage = (messageKey ? t(messageKey) : message) || '';
+    Object.entries(params).forEach(([key, value]) => {
+      resolvedMessage = resolvedMessage.replaceAll(`{${key}}`, repairText(String(value)));
+    });
     
     // Toast decoration mapping
     let icon = 'ℹ️';
@@ -417,7 +423,7 @@ class PmpApp {
     else if (type === 'error') icon = '❌';
 
     this.toastIcon.textContent = icon;
-    this.toastText.textContent = repairText(message);
+    this.toastText.textContent = repairText(resolvedMessage);
     
     this.toastBanner.className = 'toast-notification show';
     this.toastBanner.classList.add(type);
@@ -429,6 +435,9 @@ class PmpApp {
 
   translateDOM(state) {
     const lang = state.language || 'en';
+    const dictionary = translations[lang] || translations.en;
+
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     
     if (this.languageSelector) {
       this.languageSelector.value = lang;
@@ -437,15 +446,34 @@ class PmpApp {
     const elements = document.querySelectorAll('[data-i18n]');
     elements.forEach(el => {
       const key = el.getAttribute('data-i18n');
-      const text = translations[lang] && translations[lang][key];
+      const text = dictionary[key];
       if (text) {
         const repairedText = repairText(text);
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
           el.placeholder = repairedText;
         } else {
-          el.innerHTML = repairedText;
+          el.textContent = repairedText;
         }
       }
+    });
+
+    const attributeMap = {
+      'data-i18n-placeholder': 'placeholder',
+      'data-i18n-title': 'title',
+      'data-i18n-alt': 'alt',
+      'data-i18n-aria-label': 'aria-label',
+      'data-i18n-src': 'src',
+      'data-i18n-srcset': 'srcset'
+    };
+
+    Object.entries(attributeMap).forEach(([dataAttribute, targetAttribute]) => {
+      document.querySelectorAll(`[${dataAttribute}]`).forEach(el => {
+        const key = el.getAttribute(dataAttribute);
+        const translatedValue = dictionary[key];
+        if (translatedValue) {
+          el.setAttribute(targetAttribute, repairText(translatedValue));
+        }
+      });
     });
   }
 }

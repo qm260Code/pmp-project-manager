@@ -336,7 +336,7 @@ export class ScheduleComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_task') || 'Are you sure you want to delete this task? This will break dependency lines.')) {
           store.deleteScheduleItem(id);
-          store.publish('notify', { type: 'success', message: 'Activity removed successfully.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_activity') } });
         }
       }
     };
@@ -355,7 +355,7 @@ export class ScheduleComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="task-name">${t('label_task_name')}</label>
-          <input type="text" id="task-name" name="name" class="form-control" value="${task.name || ''}" placeholder="e.g. Gather system requirements" required>
+          <input type="text" id="task-name" name="name" class="form-control" value="${task.name || ''}" placeholder="${t('placeholder_task_name')}" required>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group">
@@ -374,12 +374,12 @@ export class ScheduleComponent {
           </div>
           <div class="form-group">
             <label for="task-owner">${t('label_task_owner')}</label>
-            <input type="text" id="task-owner" name="owner" class="form-control" value="${task.owner || ''}" placeholder="e.g. John Doe" required>
+            <input type="text" id="task-owner" name="owner" class="form-control" value="${task.owner || ''}" placeholder="${t('placeholder_person_name')}" required>
           </div>
         </div>
         <div class="form-group">
           <label for="task-deps">${t('label_task_dep')}</label>
-          <input type="text" id="task-deps" name="dependencies" class="form-control" value="${task.dependencies || ''}" placeholder="e.g. t-1, t-2">
+          <input type="text" id="task-deps" name="dependencies" class="form-control" value="${task.dependencies || ''}" placeholder="${t('placeholder_task_dependencies')}">
           ${depHelpStr ? `<p style="font-size:10px; color:var(--text-muted); margin-top:4px;">Available predecessor IDs: ${depHelpStr}</p>` : ''}
         </div>
       </div>
@@ -396,7 +396,7 @@ export class ScheduleComponent {
           return false;
         }
         store.addScheduleItem(data);
-        store.publish('notify', { type: 'success', message: 'Activity added successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_activity') } });
         return true;
       }
     );
@@ -412,7 +412,7 @@ export class ScheduleComponent {
           return false;
         }
         store.updateScheduleItem(task.id, data);
-        store.publish('notify', { type: 'success', message: 'Activity details updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_activity') } });
         return true;
       }
     );

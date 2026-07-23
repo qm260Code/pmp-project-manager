@@ -14,28 +14,31 @@ export class DashboardCharts {
       control: null,
       riskmatrix: null
     };
-    
-    // Bind resize event
-    window.addEventListener('resize', () => {
+
+    this.pendingFrame = null;
+    this.observedElements = new WeakSet();
+    this.resizeCharts = () => {
       Object.values(this.charts).forEach(chart => {
         if (chart && typeof chart.resize === 'function') chart.resize();
       });
-    });
+    };
+
+    window.addEventListener('resize', this.resizeCharts);
+    this.resizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(() => this.resizeCharts())
+      : null;
   }
 
   init() {
-    const state = store.state;
-    // Wait for DOM to be ready
-    setTimeout(() => {
-      this.renderGantt(state);
-      this.renderNetwork(state);
-      this.renderSCurve(state);
-      this.renderBurndown(state);
-      this.renderCFD(state);
-      this.renderResource(state);
-      this.renderControl(state);
-      this.renderRiskMatrix(state);
-    }, 100);
+    if (this.pendingFrame) cancelAnimationFrame(this.pendingFrame);
+
+    // Two animation frames let the active view and responsive grid finish layout.
+    this.pendingFrame = requestAnimationFrame(() => {
+      this.pendingFrame = requestAnimationFrame(() => {
+        this.pendingFrame = null;
+        this.renderAll(store.state);
+      });
+    });
   }
 
   update() {
@@ -43,8 +46,51 @@ export class DashboardCharts {
   }
 
   dispose() {
+    if (this.pendingFrame) cancelAnimationFrame(this.pendingFrame);
+    window.removeEventListener('resize', this.resizeCharts);
+    this.resizeObserver?.disconnect();
     Object.values(this.charts).forEach(chart => {
       if (chart && typeof chart.dispose === 'function') chart.dispose();
+    });
+  }
+
+  renderAll(state) {
+    this.renderGantt(state);
+    this.renderNetwork(state);
+    this.renderSCurve(state);
+    this.renderBurndown(state);
+    this.renderCFD(state);
+    this.renderResource(state);
+    this.renderControl(state);
+    this.renderRiskMatrix(state);
+
+    if (this.resizeObserver) {
+      document.querySelectorAll('[id^="chart-"]').forEach(el => {
+        if (!this.observedElements.has(el)) {
+          this.observedElements.add(el);
+          this.resizeObserver.observe(el);
+        }
+      });
+    }
+  }
+
+  setOption(chart, option) {
+    chart.setOption(option, { notMerge: true, lazyUpdate: false });
+  }
+
+  renderEmpty(chart) {
+    chart.clear();
+    this.setOption(chart, {
+      graphic: {
+        type: 'text',
+        left: 'center',
+        top: 'middle',
+        style: {
+          text: t('chart_no_data'),
+          fill: '#6b7280',
+          font: '14px sans-serif'
+        }
+      }
     });
   }
 
@@ -59,11 +105,12 @@ export class DashboardCharts {
             <strong>${row.value}</strong>
           </div>
         `).join('')
-      : `<div class="chart-empty-state">${t('dashboard_no_schedule')}</div>`;
+      : `<div class="chart-empty-state">${t('chart_no_data')}</div>`;
 
     el.innerHTML = `
       <div class="chart-fallback">
         <div class="chart-fallback-title">${title}</div>
+        <div class="chart-empty-state">${t('chart_load_error')}</div>
         <div class="chart-fallback-body">${body}</div>
       </div>
     `;
@@ -73,14 +120,14 @@ export class DashboardCharts {
   renderGantt(state) {
     const el = document.getElementById('chart-gantt');
     const schedule = state.schedule || [];
-    if (!this.ensureChartEngine(el, 'Schedule Summary', schedule.slice(0, 6).map(task => ({
+    if (!this.ensureChartEngine(el, t('chart_schedule_summary'), schedule.slice(0, 6).map(task => ({
       label: task.name,
-      value: `${task.progress || 0}% | ${task.startDate} to ${task.endDate}`
+      value: `${task.progress || 0}% | ${task.startDate} ${t('chart_to')} ${task.endDate}`
     })))) return;
     if (!this.charts.gantt) this.charts.gantt = window.echarts.init(el);
 
     if (schedule.length === 0) {
-      this.charts.gantt.clear();
+      this.renderEmpty(this.charts.gantt);
       return;
     }
 
@@ -102,7 +149,7 @@ export class DashboardCharts {
         formatter: function (params) {
           const idx = params[0].dataIndex;
           const task = sorted[idx];
-          return `${task.name}<br/>Start: ${task.startDate}<br/>End: ${task.endDate}<br/>Progress: ${task.progress}%`;
+          return `${task.name}<br/>${t('chart_start')}: ${task.startDate}<br/>${t('chart_end')}: ${task.endDate}<br/>${t('chart_progress')}: ${task.progress}%`;
         }
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -110,7 +157,7 @@ export class DashboardCharts {
       yAxis: { type: 'category', data: categories, inverse: true },
       series: [
         {
-          name: 'Placeholder',
+          name: 'offset',
           type: 'bar',
           stack: 'Total',
           itemStyle: { borderColor: 'transparent', color: 'transparent' },
@@ -118,7 +165,7 @@ export class DashboardCharts {
           data: startData
         },
         {
-          name: 'Duration',
+          name: t('chart_duration'),
           type: 'bar',
           stack: 'Total',
           itemStyle: { color: '#ED0007', borderRadius: [0, 4, 4, 0] },
@@ -126,43 +173,47 @@ export class DashboardCharts {
         }
       ]
     };
-    this.charts.gantt.setOption(option);
+    this.setOption(this.charts.gantt, option);
   }
 
   renderNetwork(state) {
     const el = document.getElementById('chart-network');
     const schedule = state.schedule || [];
     const dependencyCount = schedule.filter(t => String(t.dependencies || '').trim()).length;
-    if (!this.ensureChartEngine(el, 'Dependency Network', [
-      { label: 'Activities', value: schedule.length },
-      { label: 'Activities with dependencies', value: dependencyCount },
-      { label: 'Milestones', value: schedule.filter(t => String(t.name || '').includes('Milestone')).length }
+    if (!this.ensureChartEngine(el, t('chart_dependency_network'), [
+      { label: t('chart_activities'), value: schedule.length },
+      { label: t('chart_activities_with_dependencies'), value: dependencyCount },
+      { label: t('chart_milestones'), value: schedule.filter(task => String(task.name || '').toLowerCase().includes('milestone')).length }
     ])) return;
     if (!this.charts.network) this.charts.network = window.echarts.init(el);
 
-    // Mock Network Node data focusing on critical path (Total Float == 0)
-    const data = [
-      { name: 'A', x: 100, y: 150, value: [0, 5, 0, 5], symbolSize: 50, itemStyle: { color: '#ED0007' } }, // Critical
-      { name: 'B', x: 300, y: 100, value: [5, 10, 8, 13], symbolSize: 40, itemStyle: { color: '#005691' } }, // Float=3
-      { name: 'C', x: 300, y: 200, value: [5, 12, 5, 12], symbolSize: 50, itemStyle: { color: '#ED0007' } }, // Critical
-      { name: 'D', x: 500, y: 150, value: [12, 20, 12, 20], symbolSize: 50, itemStyle: { color: '#ED0007' } }  // Critical
-    ];
+    if (schedule.length === 0) {
+      this.renderEmpty(this.charts.network);
+      return;
+    }
 
-    const links = [
-      { source: 'A', target: 'B' },
-      { source: 'A', target: 'C' },
-      { source: 'B', target: 'D' },
-      { source: 'C', target: 'D', lineStyle: { color: '#ED0007', width: 3 } }
-    ];
+    const taskIds = new Set(schedule.map(task => String(task.id)));
+    const data = schedule.map(task => ({
+      id: String(task.id),
+      name: task.name,
+      value: Number(task.progress) || 0,
+      symbolSize: String(task.name || '').toLowerCase().includes('milestone') ? 54 : 42,
+      itemStyle: {
+        color: Number(task.progress) >= 100 ? '#2e7d32' : '#0b5cad'
+      }
+    }));
+    const links = schedule.flatMap(task => String(task.dependencies || '')
+      .split(',')
+      .map(value => value.trim())
+      .filter(dependencyId => taskIds.has(dependencyId))
+      .map(dependencyId => ({ source: dependencyId, target: String(task.id) })));
 
     const option = {
-      title: { text: 'Critical Path Method (CPM)', textStyle: { fontSize: 12, color: '#6b7280' } },
+      title: { text: t('chart_dependency_network'), textStyle: { fontSize: 12, color: '#6b7280' } },
       tooltip: {
         formatter: function (params) {
           if (params.dataType === 'node') {
-            const v = params.data.value;
-            const float = v[2] - v[0]; // LS - ES
-            return `Node ${params.data.name}<br/>ES: ${v[0]} | EF: ${v[1]}<br/>LS: ${v[2]} | LF: ${v[3]}<br/>Total Float: ${float}`;
+            return `${params.data.name}<br/>${t('chart_progress')}: ${params.data.value}%`;
           }
           return '';
         }
@@ -170,10 +221,14 @@ export class DashboardCharts {
       series: [
         {
           type: 'graph',
-          layout: 'none',
+          layout: 'force',
           symbolSize: 50,
           roam: true,
-          label: { show: true },
+          label: {
+            show: true,
+            formatter: params => params.data.id
+          },
+          force: { repulsion: 320, edgeLength: 120 },
           edgeSymbol: ['circle', 'arrow'],
           edgeSymbolSize: [4, 10],
           data: data,
@@ -182,75 +237,85 @@ export class DashboardCharts {
         }
       ]
     };
-    this.charts.network.setOption(option);
+    this.setOption(this.charts.network, option);
   }
 
   renderSCurve(state) {
     const el = document.getElementById('chart-scurve');
     const history = state.evmHistory || [];
     const latest = history[history.length - 1] || {};
-    if (!this.ensureChartEngine(el, 'EVM S-Curve', [
-      { label: 'Latest PV', value: `¥${Number(latest.PV || 0).toLocaleString()}` },
-      { label: 'Latest EV', value: `¥${Number(latest.EV || 0).toLocaleString()}` },
-      { label: 'Latest AC', value: `¥${Number(latest.AC || 0).toLocaleString()}` }
+    if (!this.ensureChartEngine(el, t('dashboard_chart_scurve'), [
+      { label: t('chart_latest_pv'), value: `¥${Number(latest.PV || 0).toLocaleString()}` },
+      { label: t('chart_latest_ev'), value: `¥${Number(latest.EV || 0).toLocaleString()}` },
+      { label: t('chart_latest_ac'), value: `¥${Number(latest.AC || 0).toLocaleString()}` }
     ])) return;
     if (!this.charts.scurve) this.charts.scurve = window.echarts.init(el);
 
+    if (history.length === 0) {
+      this.renderEmpty(this.charts.scurve);
+      return;
+    }
+
     const xAxis = history.map(h => h.timePoint);
-    const pv = history.map(h => h.PV);
-    const ev = history.map(h => h.EV);
-    const ac = history.map(h => h.AC);
+    const pv = history.map(h => Number(h.PV) || 0);
+    const ev = history.map(h => Number(h.EV) || 0);
+    const ac = history.map(h => Number(h.AC) || 0);
     
     // Calculate current SPI / CPI for the tooltip/title
-    let titleStr = 'Earned Value Management';
+    let titleStr = t('chart_evm_title');
     if (history.length > 0) {
       const last = history[history.length - 1];
       const spi = last.PV ? (last.EV / last.PV).toFixed(2) : 1;
       const cpi = last.AC ? (last.EV / last.AC).toFixed(2) : 1;
-      titleStr = `EVM S-Curve | Current SPI: ${spi} | CPI: ${cpi}`;
+      titleStr = `${t('dashboard_chart_scurve')} | ${t('chart_current_spi')}: ${spi} | CPI: ${cpi}`;
     }
 
     const option = {
       title: { text: titleStr, textStyle: { fontSize: 14, color: '#374151' }, top: 0 },
       tooltip: { trigger: 'axis' },
-      legend: { data: ['Planned Value (PV)', 'Earned Value (EV)', 'Actual Cost (AC)'], bottom: 0 },
+      legend: { data: [t('chart_planned_value'), t('chart_earned_value'), t('chart_actual_cost')], bottom: 0 },
       grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', boundaryGap: false, data: xAxis },
-      yAxis: { type: 'value', name: 'Value (RMB)' },
+      yAxis: { type: 'value', name: t('chart_value_rmb') },
       series: [
-        { name: 'Planned Value (PV)', type: 'line', smooth: true, itemStyle: { color: '#005691' }, data: pv },
-        { name: 'Earned Value (EV)', type: 'line', smooth: true, itemStyle: { color: '#10b981' }, areaStyle: { opacity: 0.1 }, data: ev },
-        { name: 'Actual Cost (AC)', type: 'line', smooth: true, itemStyle: { color: '#ED0007' }, data: ac }
+        { name: t('chart_planned_value'), type: 'line', smooth: true, itemStyle: { color: '#005691' }, data: pv },
+        { name: t('chart_earned_value'), type: 'line', smooth: true, itemStyle: { color: '#10b981' }, areaStyle: { opacity: 0.1 }, data: ev },
+        { name: t('chart_actual_cost'), type: 'line', smooth: true, itemStyle: { color: '#ED0007' }, data: ac }
       ]
     };
-    this.charts.scurve.setOption(option);
+    this.setOption(this.charts.scurve, option);
   }
 
   renderBurndown(state) {
     const el = document.getElementById('chart-burndown');
     const data = state.sprintBurndown || [];
     const latest = data[data.length - 1] || {};
-    if (!this.ensureChartEngine(el, 'Sprint Burndown', [
-      { label: 'Latest day', value: latest.day || '-' },
-      { label: 'Ideal remaining', value: latest.idealRemaining ?? '-' },
-      { label: 'Actual remaining', value: latest.actualRemaining ?? '-' }
+    if (!this.ensureChartEngine(el, t('chart_burndown_title'), [
+      { label: t('chart_latest_day'), value: latest.day || '-' },
+      { label: t('chart_ideal_remaining'), value: latest.idealRemaining ?? '-' },
+      { label: t('chart_actual_remaining'), value: latest.actualRemaining ?? '-' }
     ])) return;
     if (!this.charts.burndown) this.charts.burndown = window.echarts.init(el);
 
+    if (data.length === 0) {
+      this.renderEmpty(this.charts.burndown);
+      return;
+    }
+
     const xAxis = data.map(d => d.day);
-    const ideal = data.map(d => d.idealRemaining);
-    const actual = data.map(d => d.actualRemaining);
+    const ideal = data.map(d => Number(d.idealRemaining) || 0);
+    const actual = data.map(d => Number(d.actualRemaining) || 0);
 
     const option = {
       tooltip: { trigger: 'axis' },
-      legend: { data: ['Ideal', 'Actual'], top: 0 },
+      legend: { data: [t('chart_ideal'), t('chart_actual')], top: 0 },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', boundaryGap: false, data: xAxis },
-      yAxis: { type: 'value', name: 'Story Points' },
+      yAxis: { type: 'value', name: t('chart_story_points') },
       series: [
-        { name: 'Ideal', type: 'line', itemStyle: { color: '#9ca3af' }, lineStyle: { type: 'dashed' }, data: ideal },
+        { name: t('chart_ideal'), type: 'line', itemStyle: { color: '#9ca3af' }, lineStyle: { type: 'dashed' }, data: ideal },
         { 
-          name: 'Actual', 
+          name: t('chart_actual'),
           type: 'line', 
           itemStyle: { color: '#ED0007' },
           data: actual,
@@ -261,68 +326,78 @@ export class DashboardCharts {
         }
       ]
     };
-    this.charts.burndown.setOption(option);
+    this.setOption(this.charts.burndown, option);
   }
 
   renderCFD(state) {
     const el = document.getElementById('chart-cfd');
     const data = state.cfd || [];
     const latest = data[data.length - 1] || {};
-    if (!this.ensureChartEngine(el, 'Cumulative Flow', [
-      { label: 'Done', value: latest.done ?? '-' },
-      { label: 'Testing', value: latest.testing ?? '-' },
-      { label: 'In progress', value: latest.inProgress ?? '-' },
-      { label: 'To do', value: latest.todo ?? '-' }
+    if (!this.ensureChartEngine(el, t('chart_cfd_title'), [
+      { label: t('chart_done'), value: latest.done ?? '-' },
+      { label: t('chart_testing'), value: latest.testing ?? '-' },
+      { label: t('chart_in_progress'), value: latest.inProgress ?? '-' },
+      { label: t('chart_todo'), value: latest.todo ?? '-' }
     ])) return;
     if (!this.charts.cfd) this.charts.cfd = window.echarts.init(el);
 
+    if (data.length === 0) {
+      this.renderEmpty(this.charts.cfd);
+      return;
+    }
+
     const xAxis = data.map(d => d.date);
-    const todo = data.map(d => d.todo);
-    const inProgress = data.map(d => d.inProgress);
-    const testing = data.map(d => d.testing);
-    const done = data.map(d => d.done);
+    const todo = data.map(d => Number(d.todo) || 0);
+    const inProgress = data.map(d => Number(d.inProgress) || 0);
+    const testing = data.map(d => Number(d.testing) || 0);
+    const done = data.map(d => Number(d.done) || 0);
 
     const option = {
       tooltip: { trigger: 'axis', axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } } },
-      legend: { data: ['Done', 'Testing', 'In Progress', 'To Do'], top: 0 },
+      legend: { data: [t('chart_done'), t('chart_testing'), t('chart_in_progress'), t('chart_todo')], top: 0 },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: [ { type: 'category', boundaryGap: false, data: xAxis } ],
       yAxis: [ { type: 'value' } ],
       series: [
-        { name: 'Done', type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#10b981' }, data: done },
-        { name: 'Testing', type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#f59e0b' }, data: testing },
-        { name: 'In Progress', type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#3b82f6' }, data: inProgress },
-        { name: 'To Do', type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#9ca3af' }, data: todo }
+        { name: t('chart_done'), type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#10b981' }, data: done },
+        { name: t('chart_testing'), type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#f59e0b' }, data: testing },
+        { name: t('chart_in_progress'), type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#3b82f6' }, data: inProgress },
+        { name: t('chart_todo'), type: 'line', stack: 'Total', areaStyle: {}, emphasis: { focus: 'series' }, itemStyle: { color: '#9ca3af' }, data: todo }
       ]
     };
-    this.charts.cfd.setOption(option);
+    this.setOption(this.charts.cfd, option);
   }
 
   renderResource(state) {
     const el = document.getElementById('chart-resource');
     const data = state.resourceHistogram || [];
     const overloads = data.filter(d => Number(d.allocatedHours || 0) > Number(d.capacityHours || 0)).length;
-    if (!this.ensureChartEngine(el, 'Resource Load', [
-      { label: 'Periods tracked', value: data.length },
-      { label: 'Over capacity periods', value: overloads },
-      { label: 'Total allocated hours', value: data.reduce((sum, d) => sum + Number(d.allocatedHours || 0), 0) }
+    if (!this.ensureChartEngine(el, t('chart_resource_title'), [
+      { label: t('chart_periods_tracked'), value: data.length },
+      { label: t('chart_over_capacity_periods'), value: overloads },
+      { label: t('chart_total_allocated_hours'), value: data.reduce((sum, d) => sum + Number(d.allocatedHours || 0), 0) }
     ])) return;
     if (!this.charts.resource) this.charts.resource = window.echarts.init(el);
 
+    if (data.length === 0) {
+      this.renderEmpty(this.charts.resource);
+      return;
+    }
+
     const xAxis = data.map(d => d.period + ' (' + d.role + ')');
-    const capacity = data.map(d => d.capacityHours);
-    const allocated = data.map(d => d.allocatedHours);
+    const capacity = data.map(d => Number(d.capacityHours) || 0);
+    const allocated = data.map(d => Number(d.allocatedHours) || 0);
 
     const option = {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: ['Capacity', 'Allocated'], top: 0 },
+      legend: { data: [t('chart_capacity'), t('chart_allocated')], top: 0 },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: xAxis, axisLabel: { interval: 0, rotate: 15 } },
-      yAxis: { type: 'value', name: 'Hours' },
+      yAxis: { type: 'value', name: t('chart_hours') },
       series: [
-        { name: 'Capacity', type: 'bar', itemStyle: { color: '#e5e7eb' }, data: capacity },
+        { name: t('chart_capacity'), type: 'bar', itemStyle: { color: '#e5e7eb' }, data: capacity },
         { 
-          name: 'Allocated', 
+          name: t('chart_allocated'),
           type: 'bar', 
           barGap: '-100%',
           itemStyle: { 
@@ -334,25 +409,30 @@ export class DashboardCharts {
         }
       ]
     };
-    this.charts.resource.setOption(option);
+    this.setOption(this.charts.resource, option);
   }
 
   renderControl(state) {
     const el = document.getElementById('chart-control');
     const data = state.controlChart || [];
     const outOfControl = data.filter(d => Number(d.measurement) > Number(d.UCL) || Number(d.measurement) < Number(d.LCL)).length;
-    if (!this.ensureChartEngine(el, 'Quality Control', [
-      { label: 'Samples', value: data.length },
-      { label: 'Out of control', value: outOfControl },
-      { label: 'Mean target', value: data[0]?.mean ?? '-' }
+    if (!this.ensureChartEngine(el, t('chart_quality_title'), [
+      { label: t('chart_samples'), value: data.length },
+      { label: t('chart_out_of_control'), value: outOfControl },
+      { label: t('chart_mean_target'), value: data[0]?.mean ?? '-' }
     ])) return;
     if (!this.charts.control) this.charts.control = window.echarts.init(el);
 
+    if (data.length === 0) {
+      this.renderEmpty(this.charts.control);
+      return;
+    }
+
     const xAxis = data.map(d => d.sampleId);
-    const measurement = data.map(d => d.measurement);
-    const ucl = data[0] ? data[0].UCL : 0;
-    const lcl = data[0] ? data[0].LCL : 0;
-    const mean = data[0] ? data[0].mean : 0;
+    const measurement = data.map(d => Number(d.measurement) || 0);
+    const ucl = Number(data[0]?.UCL) || 0;
+    const lcl = Number(data[0]?.LCL) || 0;
+    const mean = Number(data[0]?.mean) || 0;
 
     const option = {
       tooltip: { trigger: 'axis' },
@@ -361,7 +441,7 @@ export class DashboardCharts {
       yAxis: { type: 'value', min: lcl - 1, max: ucl + 1 },
       series: [
         {
-          name: 'Measurement',
+          name: t('chart_measurement'),
           type: 'line',
           data: measurement,
           itemStyle: { color: '#005691' },
@@ -369,39 +449,50 @@ export class DashboardCharts {
             data: [
               { yAxis: ucl, name: 'UCL', lineStyle: { color: '#ED0007' } },
               { yAxis: lcl, name: 'LCL', lineStyle: { color: '#ED0007' } },
-              { yAxis: mean, name: 'Mean', lineStyle: { color: '#10b981' } }
+              { yAxis: mean, name: t('chart_mean'), lineStyle: { color: '#10b981' } }
             ]
           }
         }
       ]
     };
-    this.charts.control.setOption(option);
+    this.setOption(this.charts.control, option);
   }
 
   renderRiskMatrix(state) {
     const el = document.getElementById('chart-riskmatrix');
     const risks = state.risks || [];
     const severe = risks.filter(r => Number(r.probability || 0) * Number(r.impact || 0) >= 12).length;
-    if (!this.ensureChartEngine(el, 'Risk Matrix', [
-      { label: 'Registered risks', value: risks.length },
-      { label: 'High severity risks', value: severe },
-      { label: 'Active risks', value: risks.filter(r => r.status === 'Active').length }
+    if (!this.ensureChartEngine(el, t('chart_risk_title'), [
+      { label: t('chart_registered_risks'), value: risks.length },
+      { label: t('chart_high_severity_risks'), value: severe },
+      { label: t('chart_active_risks'), value: risks.filter(r => r.status === 'Active').length }
     ])) return;
     if (!this.charts.riskmatrix) this.charts.riskmatrix = window.echarts.init(el);
 
+    if (risks.length === 0) {
+      this.renderEmpty(this.charts.riskmatrix);
+      return;
+    }
+
     // Data schema: [Probability (0-5), Impact (0-5), description]
-    const activeRisks = risks.map(r => [r.probability, r.impact, r.description, r.owner]);
+    const activeRisks = risks
+      .filter(r => r.status !== 'Closed')
+      .map(r => [Number(r.probability) || 0, Number(r.impact) || 0, r.description, r.owner]);
+    if (activeRisks.length === 0) {
+      this.renderEmpty(this.charts.riskmatrix);
+      return;
+    }
 
     const option = {
       tooltip: {
         formatter: function (params) {
           const d = params.data;
-          return `<strong>Risk:</strong> ${d[2]}<br/><strong>Owner:</strong> ${d[3]}<br/>Prob: ${d[0]} | Impact: ${d[1]}<br/>Score: ${d[0]*d[1]}`;
+          return `<strong>${t('chart_risk_title')}:</strong> ${d[2]}<br/><strong>${t('chart_owner')}:</strong> ${d[3] || t('chart_unknown')}<br/>${t('chart_probability')}: ${d[0]} | ${t('chart_impact')}: ${d[1]}<br/>${t('chart_score')}: ${d[0]*d[1]}`;
         }
       },
       grid: { left: '5%', right: '5%', bottom: '10%', top: '10%', containLabel: true },
-      xAxis: { type: 'value', name: 'Impact (1-5)', min: 0, max: 5, splitLine: { show: false } },
-      yAxis: { type: 'value', name: 'Probability (1-5)', min: 0, max: 5, splitLine: { show: false } },
+      xAxis: { type: 'value', name: `${t('chart_impact')} (1-5)`, min: 0, max: 5, splitLine: { show: false } },
+      yAxis: { type: 'value', name: `${t('chart_probability')} (1-5)`, min: 0, max: 5, splitLine: { show: false } },
       visualMap: {
         show: false,
         dimension: 0,
@@ -413,7 +504,7 @@ export class DashboardCharts {
       },
       series: [
         {
-          name: 'Risks',
+          name: t('chart_registered_risks'),
           type: 'scatter',
           symbolSize: function (data) {
             return (data[0] * data[1]) * 2 + 10; // Bubble size based on score
@@ -423,6 +514,6 @@ export class DashboardCharts {
         }
       ]
     };
-    this.charts.riskmatrix.setOption(option);
+    this.setOption(this.charts.riskmatrix, option);
   }
 }

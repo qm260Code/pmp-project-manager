@@ -89,6 +89,7 @@ export class ChangeRequestsComponent {
       else if (cr.status === 'Pending') statusClass = 'badge-monitoring';
       else if (cr.status === 'Rejected') statusClass = 'badge-closing';
       else if (cr.status === 'Closed') statusClass = 'badge-initiating';
+      const statusText = t(`status_${String(cr.status || 'Draft').toLowerCase().replaceAll(' ', '_')}`);
 
       const catMap = {
         Scope: t('cr_cat_scope'),
@@ -122,7 +123,7 @@ export class ChangeRequestsComponent {
             <div style="font-size: 11px; color: var(--text-muted); margin-top:1px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cr.ccbNotes || ''}">${cr.ccbNotes || noCcbNotesText}</div>
           </td>
           <td>
-            <span class="badge ${statusClass}">${cr.status}</span>
+            <span class="badge ${statusClass}">${statusText}</span>
           </td>
           <td>
             <div style="display:flex; gap:8px;">
@@ -147,7 +148,7 @@ export class ChangeRequestsComponent {
       } else if (btn.dataset.action === 'delete') {
         if (confirm(t('msg_confirm_delete_item') || 'Are you sure you want to delete this change request log? This cannot be undone.')) {
           store.deleteChangeRequest(id);
-          store.publish('notify', { type: 'success', message: 'Change request entry deleted.' });
+          store.publish('notify', { type: 'success', messageKey: 'msg_item_deleted', params: { item: t('item_change_request') } });
         }
       }
     };
@@ -158,7 +159,7 @@ export class ChangeRequestsComponent {
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label for="cr-desc">${t('label_cr_desc')}</label>
-          <input type="text" id="cr-desc" name="description" class="form-control" value="${cr.description || ''}" placeholder="e.g. Add validation logic to WMS input fields" required>
+          <input type="text" id="cr-desc" name="description" class="form-control" value="${cr.description || ''}" placeholder="${t('placeholder_change_description')}" required>
         </div>
         
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -174,35 +175,35 @@ export class ChangeRequestsComponent {
           </div>
           <div class="form-group">
             <label for="cr-requester">${t('label_cr_requester')}</label>
-            <input type="text" id="cr-requester" name="requester" class="form-control" value="${cr.requester || ''}" placeholder="e.g. John Doe" required>
+            <input type="text" id="cr-requester" name="requester" class="form-control" value="${cr.requester || ''}" placeholder="${t('placeholder_person_name')}" required>
           </div>
         </div>
 
         <div class="form-group">
           <label for="cr-impact">${t('label_cr_impact')}</label>
-          <textarea id="cr-impact" name="impactAnalysis" class="form-control" style="height:70px;" placeholder="Assess impact on scope, schedule, and cost." required>${cr.impactAnalysis || ''}</textarea>
+          <textarea id="cr-impact" name="impactAnalysis" class="form-control" style="height:70px;" placeholder="${t('placeholder_impact_analysis')}" required>${cr.impactAnalysis || ''}</textarea>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px dashed var(--border-color); padding-top:12px; margin-top:4px;">
           <div class="form-group">
             <label for="cr-status">${t('label_cr_status')}</label>
             <select id="cr-status" name="status" class="form-control">
-              <option value="Draft" ${cr.status === 'Draft' ? 'selected' : ''}>Draft</option>
-              <option value="Pending" ${cr.status === 'Pending' || !cr.status ? 'selected' : ''}>Pending</option>
-              <option value="Approved" ${cr.status === 'Approved' ? 'selected' : ''}>Approved</option>
-              <option value="Rejected" ${cr.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
-              <option value="Closed" ${cr.status === 'Closed' ? 'selected' : ''}>Closed</option>
+              <option value="Draft" ${cr.status === 'Draft' ? 'selected' : ''}>${t('status_draft')}</option>
+              <option value="Pending" ${cr.status === 'Pending' || !cr.status ? 'selected' : ''}>${t('status_pending')}</option>
+              <option value="Approved" ${cr.status === 'Approved' ? 'selected' : ''}>${t('status_approved')}</option>
+              <option value="Rejected" ${cr.status === 'Rejected' ? 'selected' : ''}>${t('status_rejected')}</option>
+              <option value="Closed" ${cr.status === 'Closed' ? 'selected' : ''}>${t('status_closed')}</option>
             </select>
           </div>
           <div class="form-group">
             <label for="cr-approver">${t('label_cr_approver')}</label>
-            <input type="text" id="cr-approver" name="approver" class="form-control" value="${cr.approver || ''}" placeholder="e.g. Jane Smith (CCB Chair)">
+            <input type="text" id="cr-approver" name="approver" class="form-control" value="${cr.approver || ''}" placeholder="${t('placeholder_ccb_chair')}">
           </div>
         </div>
 
         <div class="form-group">
           <label for="cr-notes">${t('label_cr_notes')}</label>
-          <textarea id="cr-notes" name="ccbNotes" class="form-control" style="height:70px;" placeholder="CCB meeting decision notes...">${cr.ccbNotes || ''}</textarea>
+          <textarea id="cr-notes" name="ccbNotes" class="form-control" style="height:70px;" placeholder="${t('placeholder_ccb_notes')}">${cr.ccbNotes || ''}</textarea>
         </div>
       </div>
     `;
@@ -223,7 +224,7 @@ export class ChangeRequestsComponent {
           ccbNotes: data.ccbNotes,
           dateRaised: new Date().toISOString().split('T')[0]
         });
-        store.publish('notify', { type: 'success', message: 'Change request submitted successfully.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_created', params: { item: t('item_change_request') } });
         return true;
       }
     );
@@ -243,7 +244,7 @@ export class ChangeRequestsComponent {
           approver: data.approver,
           ccbNotes: data.ccbNotes
         });
-        store.publish('notify', { type: 'success', message: 'Change request details updated.' });
+        store.publish('notify', { type: 'success', messageKey: 'msg_item_updated', params: { item: t('item_change_request') } });
         return true;
       }
     );
